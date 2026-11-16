@@ -546,12 +546,12 @@ function renderHome() {
   return { eyebrow: 'Wedding Dashboard', title: 'Home', html: `
   ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:29, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the tour</button><button class="btn alt sm" data-act="help">Starter steps</button></div></section>`}
   <section class="hero">
-    <div class="k">${esc(longD(d.wd))}</div>
-    <h2>${esc(d.couple)}</h2>
-    <div class="sub">${esc(d.venue)} · ${esc(d.city)} · ${time12(d.time)}</div>
-    <div class="count"><b class="num">${s.togo}</b><span>days to go</span></div>
+    <div class="k">${d.wd ? esc(longD(d.wd)) : 'Your wedding'}</div>
+    <h2>${esc(d.couple || 'Welcome!')}</h2>
+    <div class="sub">${[d.venue, d.city, d.time ? time12(d.time) : ''].filter(Boolean).map(esc).join(' · ') || 'Add your names, date and venue to get started.'}</div>
+    ${d.wd ? `<div class="count"><b class="num">${s.togo}</b><span>days to go</span></div>` : `<button class="btn sm" data-act="settings" style="margin-top:14px;background:#fff;color:var(--deep)">${I.gear} Add your wedding details</button>`}
     <div class="tl"><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
-    <div class="lbl"><span>Engaged ${fmtD(d.eng)}</span><span>${Math.round(s.pct * 100)}% of planning time used</span></div></div>
+    <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning timeline'}</span><span>${Math.round(s.pct * 100)}% of planning time used</span></div></div>
   </section>
   <section class="tiles">
     ${tile('var(--hdr)', 'Budget', Math.round(s.actual / (s.budget || 1) * 100) + '%', `${money(s.actual)} booked`, '', 'data-go="money"')}
@@ -593,11 +593,18 @@ function renderHome() {
   </section>
   <section class="card flush">
     <div class="sh"><h3>Key contacts</h3></div>
-    ${contactRow(d.planner, 'Planner', d.pphone, 'nicole@perfectlyplanned.com')}
-    ${contactRow(d.doc, 'Day-of contact', d.dphone, S.people.find(p => p.Name === 'Emily Morgan')?.Email)}
+    ${contactRow(d.planner, 'Planner', d.pphone, emailFor(d.planner))}
+    ${contactRow(d.doc, 'Day-of contact', d.dphone, emailFor(d.doc))}
+    ${d.planner || d.doc ? '' : '<div class="empty">Add your planner and day-of contact in Settings.</div>'}
   </section>` };
 }
+function emailFor(label) {
+  const nm = String(label || '').split(/[,(]/)[0].trim().toLowerCase(); if (!nm) return '';
+  const p = S.people.find(x => x.Name.toLowerCase() === nm); if (p && p.Email) return p.Email;
+  const v = S.vendors.find(x => String(x.Contact).toLowerCase() === nm); return v ? v.Email : '';
+}
 function contactRow(name, role, phone, email) {
+  if (!name) return '';
   return `<div class="row"><div class="avatar b">${initials(name)}</div><div class="main"><div class="t">${esc(name)}</div><div class="m">${esc(role)} · ${esc(phone)}</div></div>
   <div class="contact">${phone ? `<button class="cbtn" data-call="${esc(phone)}" data-name="${esc(name)}" aria-label="Call ${esc(name)}">${I.phone}</button>` : ''}${email ? `<a class="cbtn" href="mailto:${esc(email)}" aria-label="Email ${esc(name)}">${I.mail}</a>` : ''}</div></div>`;
 }
@@ -846,7 +853,8 @@ function settingsSheet() {
   <div class="sect">Your data and Excel</div>
   <div class="note" style="margin-top:-4px">Already using The Wedding Desk Excel workbook? Bring everything in at once, or download a copy of what's in the app.</div>
   <div class="sharegrid"><label class="btn plum" style="cursor:pointer">${I.xlup} Import from Excel<input type="file" id="xlfile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label><button class="btn alt" data-act="xlexport">${I.xldown} Download Excel</button></div>
-  <button class="btn alt sm" data-act="reset">${I.reset} Reset the example data</button>`);
+  <div class="sharegrid"><button class="btn alt sm" data-act="blank">${I.plus} Start my own wedding</button><button class="btn alt sm" data-act="reset">${I.reset} Reload example</button></div>
+  <div class="note">Start my own wedding clears the example so you can enter yours. Download Excel first if you want a copy.</div>`);
 }
 function saveSettings() {
   const v = id => document.getElementById('st-' + id).value.trim(), d = S.details;
@@ -1125,6 +1133,8 @@ document.addEventListener('click', e => {
   if (ds.vendor) return vendorSheet(+ds.vendor);
   if (ds.q) { UI.openQ = UI.openQ === +ds.q ? null : +ds.q; return render(); }
   if (ds.reply) { const p = S.people[+ds.reply]; p.RSVP = ds.r; if (ds.r === 'Accepted') p['Meal Choice'] = document.getElementById('mealpick')?.value || p['Meal Choice']; save(); closeSheet(); render(); toast(`${p.Name} ${ds.r === 'Accepted' ? 'accepted' : 'declined'}. Guest list updated.`); return; }
+  if (ds.act === 'blank') return sheet(`<h4>Start your own wedding?</h4><div class="lead">This clears the example wedding: every task, guest, payment, vendor and detail. You can reload the example later from Settings.</div><button class="btn" data-act="blank-go">Yes, clear it and start fresh</button><button class="btn alt" data-close="1">Cancel</button>`);
+  if (ds.act === 'blank-go') { S = freshState(); for (const k of ['tasks', 'risks', 'budget', 'payments', 'people', 'vendors', 'planner', 'locations', 'photos', 'music', 'rides', 'lodging', 'equipment']) S[k] = []; S.questions = S.questions.map(q => ({ ...q, Answer: '', Status: 'Not Started', 'Action Item': '', Notes: '' })); S.details = { couple: '', eng: '', wd: '', time: '', venue: '', street: '', city: '', target: '', planner: '', pphone: '', doc: '', dphone: '' }; S.seenWelcome = true; save(); closeSheet(); go('home'); toast('All clear. Add your details to begin.', { label: 'Settings', fn: settingsSheet }); return; }
   if (ds.act === 'reset') { S = freshState(); S.seenWelcome = true; save(); closeSheet(); toast('Example data restored'); return render(); }
   if (ds.act === 'help') return helpSheet(false);
   if (ds.act === 'settings') return settingsSheet();
