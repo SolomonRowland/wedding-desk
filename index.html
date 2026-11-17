@@ -691,7 +691,7 @@ function renderHome() {
     <div class="tl"><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
     <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning Timeline'}</span><span>${Math.round(s.pct * 100)}% of Planning Time Used</span></div></div>`;
   return { eyebrow: d.wd ? longD(d.wd) : 'Your Wedding', title: d.couple || 'Welcome!', head, html: `
-  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
+  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to Wedding Planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
   <section class="tiles">
     ${tile('var(--hdr)', 'Budget', Math.round(s.actual / (s.budget || 1) * 100) + '%', `${money(s.actual)} booked`, '', 'data-go="money"')}
     ${tile('var(--plum)', 'Guests', s.acc, `accepted of ${s.total} · ${s.inv} awaiting`, '', 'data-go="guests"')}
@@ -1004,7 +1004,7 @@ function drawCompose(keepScroll) {
   ${!list.length ? `<div class="empty">No ${need === 'phone' ? 'mobile numbers' : 'email addresses'} saved for ${all.length === 1 ? esc(all[0].name) : 'these people'} yet.</div>`
     : one ? `<a class="btn plum" data-sendk="${list[0].key}" href="${esc(cmpHref(list[0]))}">${CMP.mode === 'sms' ? I.sms : I.mail} Open in ${app}</a>`
     : `${CMP.mode === 'email' ? `<a class="btn plum" data-sendall="1" href="${esc(cmpHref(null, list.map(c => c.email).join(',')))}">${I.mail} Email everyone at once (BCC)</a><div class="note" style="margin-top:-6px">One email, addresses hidden from each other, greeting says "Hi there". Or send them one by one below so each is personal.</div>` : `<div class="note">Tap each name to open a personal text. Everyone gets their own message, so replies come back only to you.</div>`}
-    <div class="sect">Send one by one · <span id="cmp-count">${CMP.sent.size}</span> of ${list.length} sent</div>
+    <div class="sect">Send One by One · <span id="cmp-count">${CMP.sent.size}</span> of ${list.length} sent</div>
     <div class="queue">${list.map(c => `<a class="qrow ${CMP.sent.has(c.key) ? 'sent' : ''}" data-sendk="${c.key}" href="${esc(cmpHref(c))}"><div class="avatar">${initials(c.name)}</div><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(CMP.mode === 'sms' ? c.phone : c.email)}</div></div><span class="qgo">${CMP.sent.has(c.key) ? I.check + ' Sent' : (CMP.mode === 'sms' ? 'Text' : 'Email')}</span></a>`).join('')}</div>`}
   ${missing ? `<div class="note">${missing} ${missing === 1 ? 'person has' : 'people have'} no ${need === 'phone' ? 'mobile number' : 'email'} saved, so ${missing === 1 ? 'they are' : 'they\'re'} left out.</div>` : ''}
   ${CMP.rsvp ? `<div class="proto">${I.heart}<span>Replies come back to your phone. When someone answers, tap <b>Record Replies</b> on the Guests tab to mark them in one tap.</span></div>` : ''}
@@ -1111,7 +1111,7 @@ function vendorForm(i) {
   ${fld('vf-email', 'Email', v.Email, 'email')}
   ${fld('vf-addr', 'Address', v.Address, 'text', 'placeholder="Street, city, state, ZIP" autocomplete="off"')}
   ${fld('vf-web', 'Website', v.Website, 'url', 'placeholder="www.example.com" autocomplete="off" autocapitalize="off"')}
-  <div class="sect">Client portal login (optional)</div>
+  <div class="sect">Client Portal Login (Optional)</div>
   <div class="two">${fld('vf-login', 'Username or Email', v.Login, 'text', 'autocomplete="off" autocapitalize="off" spellcheck="false"')}<div class="field"><label for="vf-pw">Password</label><div class="pwwrap"><input id="vf-pw" type="password" value="${esc(v.Password ?? '')}" autocomplete="new-password" autocapitalize="off" spellcheck="false"><button type="button" class="mini" data-act="pwtoggle" aria-label="Show Password">${I.eye}</button></div></div></div>
   <div class="note" style="margin-top:-6px">Saved only on this phone and never included in Excel downloads or shared PDFs. For bank or card logins, your phone's Passwords app is the safer place.</div>
   <button class="btn plum" data-act="savevendor" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add vendor' : 'Save Changes'}</button>
@@ -1200,7 +1200,7 @@ const FAQ = [
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes the full Excel workbook and user guide, which track the same information.'],
   ['Can I bring in my Excel workbook, or get my data out?', 'Yes. In Settings, tap Import from Excel and pick your Wedding Desk workbook. You will see what was found before anything changes, and can replace or add to what is in the app. Download Excel gives you a copy of everything in the app at any time.'],
 ];
-const AUTOS = [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
+const AUTOS = [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-You Reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
 const NOTIFY = [['tasks', 'Task Reminders', 'A nudge 3 days before a task is due.'], ['pay', 'Payment Reminders', 'A heads-up a week before each vendor payment.'], ['rsvp', 'RSVP replies', 'Hear right away when a guest responds.'], ['digest', 'Weekly Summary', 'A Monday recap of what\'s coming up.']];
 function settingsSheet(focusId) {
   const d = S.details, [p1, p2] = (d.couple || '').split('&').map(x => x.trim());
@@ -1249,7 +1249,7 @@ function saveSettings() {
 function helpSheet(play) {
   stopVideo();
   const steps = [['Check Your Wedding Details', 'Date, venue and countdown on Home', 'home', ''], ['Add Your Guests', 'Name, phone, email and address so you can reach them', 'guests', 'list'], ['Set Your Budget', 'See where the money goes by group', 'money', 'budget'], ['Line Up Your Vendors', 'Track each one from first call to booked', 'vendors', 'vendors'], ['Work Through the Questionnaire', 'Decisions turn into tasks for you', 'plan', 'questions']];
-  const autos = AUTOS; void [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
+  const autos = AUTOS; void [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-You Reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
   sheet(`<div class="help-hd"><h4>Info Center</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="vwrap"><video id="tourv" src="tour.mp4" poster="tour-poster.jpg" controls playsinline preload="metadata" aria-label="Screen recording tour of the app"></video></div>
   <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (5:45). Turn your sound on, and tap a chapter to jump to it.</div>
