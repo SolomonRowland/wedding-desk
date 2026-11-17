@@ -362,6 +362,12 @@ button:disabled { opacity: .45; }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .sharegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #printroot { display: none; }
+.field select { appearance: none; -webkit-appearance: none; padding-right: 34px !important; background-image: linear-gradient(45deg, transparent 50%, var(--plum) 50%), linear-gradient(135deg, var(--plum) 50%, transparent 50%); background-position: calc(100% - 17px) 52%, calc(100% - 12px) 52%; background-size: 5px 5px; background-repeat: no-repeat; color: var(--ink); }
+.field input:focus, .field select:focus, .field textarea:focus, .search:focus-within { outline: none; border-color: var(--mauve); box-shadow: 0 0 0 3px rgba(168,139,160,.22); }
+.field input[type=date], .field input[type=time] { -webkit-appearance: none; appearance: none; min-height: 44px; }
+.loosechips { display: flex; flex-wrap: wrap; gap: 6px; }
+.loosechips button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 99px; background: var(--alertbg); color: var(--alert); font: 600 12.5px var(--body); }
+.loosechips button b { font-variant-numeric: tabular-nums; }
 .segbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--blush); border-radius: 13px; padding: 3px; }
 .segbar button { padding: 9px 4px; border-radius: 10px; font: 600 13px var(--body); color: var(--plum); white-space: nowrap; transition: background-color .15s, color .15s; -webkit-tap-highlight-color: transparent; }
 .segbar button[aria-pressed="true"] { background: var(--surface); color: var(--deep); box-shadow: 0 1px 3px rgba(85,58,77,.18); }
@@ -611,8 +617,8 @@ function dateChip(s) {
 function dueText(s) { const n = days(s); if (n === null || isNaN(n)) return ''; if (n < 0) return `<span class="pill red">${-n}d overdue</span>`; if (n === 0) return '<span class="pill warn">today</span>'; if (n <= 14) return `<span class="pill warn">in ${n}d</span>`; return `<span class="pill soft">in ${n}d</span>`; }
 function renderHome() {
   const s = stats(), d = S.details;
-  const pays = S.payments.filter(p => p.Status !== 'Paid' && p['Due Date']).sort((a, b) => a['Due Date'].localeCompare(b['Due Date'])).slice(0, 3);
-  const tasks = S.tasks.filter(t => OPEN(t) && t['Due Date']).sort((a, b) => a['Due Date'].localeCompare(b['Due Date'])).slice(0, 4);
+  const pays = S.payments.filter(p => p.Status !== 'Paid' && p['Due Date']).sort((a, b) => a['Due Date'].localeCompare(b['Due Date'])).slice(0, 2);
+  const tasks = S.tasks.filter(t => OPEN(t) && t['Due Date']).sort((a, b) => a['Due Date'].localeCompare(b['Due Date'])).slice(0, 3);
   const noTable = S.people.filter(p => p.RSVP === 'Accepted' && !p.Table).length;
   const thanks = S.people.filter(p => p['Gift Received'] === 'Yes' && p['Thank You Sent'] !== 'Yes').length;
   const rides = S.rides.filter(r => r.Status !== 'Confirmed').length, lodg = S.lodging.filter(r => r.Status !== 'Confirmed').length;
@@ -620,7 +626,7 @@ function renderHome() {
   const songs = S.music.filter(m => m.Moment !== 'Do Not Play' && m.Status === 'Not Selected').length;
   const tile = (c, l, v, sub, cls = '', go = '') => `<button class="tile ${cls}" style="--c:${c}" ${go}><span class="l">${l}</span><span class="v num">${v}</span><span class="s">${sub}</span></button>`;
   return { eyebrow: 'Wedding Dashboard', title: 'Home', html: `
-  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:29, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the tour</button><button class="btn alt sm" data-act="help">Starter steps</button></div></section>`}
+  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the tour</button><button class="btn alt sm" data-act="help">Starter steps</button></div></section>`}
   <section class="hero">
     <div class="k">${d.wd ? esc(longD(d.wd)) : 'Your wedding'}</div>
     <h2>${esc(d.couple || 'Welcome!')}</h2>
@@ -656,17 +662,8 @@ function renderHome() {
       ${s.inv ? `<button class="btn sm plum" data-act="rsvp" data-mode="sms" style="margin-top:4px">${I.sms} Ask ${s.inv} for RSVPs</button>` : ''}
     </div></div>
   </section>
-  <section class="card">
-    <div class="sh"><h3>Loose ends</h3></div>
-    <div class="loose">
-      <div class="${noTable ? 'hot' : ''}">Accepted, no table<b>${noTable}</b></div>
-      <div class="${thanks ? 'hot' : ''}">Thank-yous owed<b>${thanks}</b></div>
-      <div class="${rides ? 'hot' : ''}">Rides unconfirmed<b>${rides}</b></div>
-      <div class="${lodg ? 'hot' : ''}">Rooms unconfirmed<b>${lodg}</b></div>
-      <div>Questions open<b>${qOpen}</b></div>
-      <div>Songs to pick<b>${songs}</b></div>
-    </div>
-  </section>
+  ${(() => { const L = [[noTable, 'accepted, no table', 'data-go="guests" data-sub="seating"'], [thanks, 'thank-yous owed', 'data-go="guests" data-sub="list"'], [rides, 'rides to confirm', 'data-go="guests" data-sub="stay"'], [lodg, 'rooms to confirm', 'data-go="guests" data-sub="stay"'], [qOpen, 'decisions open', 'data-go="plan" data-sub="questions"'], [songs, 'songs to pick', 'data-go="plan" data-sub="music"']].filter(x => x[0]);
+    return L.length ? `<section class="card"><div class="sh"><h3>Loose ends</h3></div><div class="loosechips">${L.map(([n, l, g]) => `<button ${g}><b>${n}</b> ${l}</button>`).join('')}</div></section>` : ''; })()}
   <section class="card flush">
     <div class="sh"><h3>Key contacts</h3></div>
     ${d.venue ? keyRow('k:venue') : ''}${keyRow('k:planner')}${keyRow('k:doc')}
@@ -1117,7 +1114,7 @@ function savePay() {
 }
 
 /* ---------- Info Center ---------- */
-const CHAPTERS = [{"label": "Welcome", "t": 0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.7}, {"label": "Plan", "t": 76.6}, {"label": "Questionnaire", "t": 114.8}, {"label": "Wedding Day", "t": 142.1}, {"label": "Guests", "t": 161.9}, {"label": "RSVP by text", "t": 197.8}, {"label": "Money", "t": 228.5}, {"label": "Vendors", "t": 255.3}, {"label": "Share or print", "t": 283.3}, {"label": "You\u2019re ready", "t": 317.8}];
+const CHAPTERS = [{"label": "Welcome", "t": 0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.8}, {"label": "Plan", "t": 76.6}, {"label": "Decisions", "t": 115.0}, {"label": "Wedding Day", "t": 142.4}, {"label": "Guests", "t": 162.2}, {"label": "RSVPs", "t": 209.6}, {"label": "Money", "t": 244.3}, {"label": "Vendors", "t": 271.2}, {"label": "Share or print", "t": 299.6}, {"label": "You’re ready", "t": 334.2}];
 function stopVideo() { const v = document.getElementById('tourv'); if (v) v.pause(); }
 function wireVideo(play) {
   const v = document.getElementById('tourv'); if (!v) return;
@@ -1140,7 +1137,7 @@ const FAQ = [
   ['How do I share my task list with someone?', 'On Plan, tap the share icon at the top. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
   ['What is the difference between Booked and Paid?', 'Booked is what you have agreed to pay vendors. Paid is money already sent. The gap between them is what you still owe.'],
   ['Can my partner or planner use this too?', 'Not yet. Your plan is saved on this phone. Use Share to send them a copy, or Download Excel in Settings to hand over everything.'],
-  ['How long is the tour, and can I skip around?', 'It runs 5 minutes 29 seconds, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
+  ['How long is the tour, and can I skip around?', 'It runs 5 minutes 45 seconds, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes the full Excel workbook and user guide, which track the same information.'],
   ['Can I bring in my Excel workbook, or get my data out?', 'Yes. In Settings, tap Import from Excel and pick your Wedding Desk workbook. You will see what was found before anything changes, and can replace or add to what is in the app. Download Excel gives you a copy of everything in the app at any time.'],
 ];
@@ -1172,11 +1169,8 @@ function settingsSheet(focusId) {
   <button class="btn plum" data-act="savesettings">Save changes</button>
   <div class="sect">Smart steps</div>
   <div class="autos">${AUTOS.map(a => sw('auto', a)).join('')}</div>
-  <div class="sect">Notifications</div>
-  <div class="autos">${NOTIFY.map(a => sw('notify', a)).join('')}</div>
-  <div class="note">Notifications are part of the finished app. In this preview the switches save your choice but nothing is sent.</div>
   <div class="sect">Help</div>
-  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the app tour</b><span>Narrated video · 5:29</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter steps and common questions</span></span><span class="go">Open</span></button></div>
+  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the app tour</b><span>Narrated video · 5:45</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter steps and common questions</span></span><span class="go">Open</span></button></div>
   <div class="sect">Your data and Excel</div>
   <div class="note" style="margin-top:-4px">Already using The Wedding Desk Excel workbook? Bring everything in at once, or download a copy of what's in the app.</div>
   <div class="sharegrid"><label class="btn plum" style="cursor:pointer">${I.xlup} Import from Excel<input type="file" id="xlfile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label><button class="btn alt" data-act="xlexport">${I.xldown} Download Excel</button></div>
@@ -1199,7 +1193,7 @@ function helpSheet(play) {
   const autos = AUTOS; void [['q', 'Questionnaire to tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto check-off', 'When you mark a thank-you as sent, its task is checked off.']];
   sheet(`<div class="help-hd"><h4>Info Center</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="vwrap"><video id="tourv" src="tour.mp4" poster="tour-poster.jpg" controls playsinline preload="metadata" aria-label="Screen recording tour of the app"></video></div>
-  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (5:29). Turn your sound on, and tap a chapter to jump to it.</div>
+  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (5:45). Turn your sound on, and tap a chapter to jump to it.</div>
   <div class="opts">${CHAPTERS.map(c => `<button class="chip" data-act="vchap" data-t="${c.t}" aria-pressed="false">${c.label}</button>`).join('')}</div>
   <div class="sect">Starter steps</div>
   <div class="steps">${steps.map(([a, b, tab, sub], k) => `<button data-act="hgo" data-tab="${tab}" data-sub="${sub}"><span class="n">${k + 1}</span><span class="tx"><b>${a}</b><span>${b}</span></span><span class="go">Go</span></button>`).join('')}</div>
