@@ -26,26 +26,26 @@
 /* Layout: a single phone-width app column on a blush ground; tab bar pinned to the bottom of the column.
    Palette and type come straight from The Wedding Desk workbook and user guide. One deliberate light look. */
 :root {
-  --ground: #F4E7E6;
+  --ground: #F6ECEB;
   --surface: #FFFFFF;
-  --petal: #F9EEED;
+  --petal: #FBF3F2;
   --blush: #F2DCDB;
-  --line: #E8D3D2;
+  --line: #EEDCDB;
   --rose: #D99694;
   --deep: #953735;
   --hdr: #A95450;
-  --plum: #6E4B63;
-  --dplum: #553A4D;
-  --mauve: #A88BA0;
-  --smauve: #C9B6C3;
+  --plum: #93566A;
+  --dplum: #74485A;
+  --mauve: #C39AA6;
+  --smauve: #E3CCD2;
   --ink: #3F2A29;
   --muted: #7A6260;
-  --label: #7C5E74;
+  --label: #93566A;
   --alert: #A6231F;
   --alertbg: #F8E1DF;
   --warn: #9A4A0A;
   --warnbg: #FBEBDD;
-  --okbg: #EFE5EC;
+  --okbg: #F7E6EA;
   --display: "Cormorant", "Cormorant Garamond", Georgia, "Times New Roman", serif;
   --body: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --r: 14px;
@@ -362,6 +362,21 @@ button:disabled { opacity: .45; }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .sharegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #printroot { display: none; }
+/* soft palette pass */
+.tile { border-top: 0; box-shadow: inset 0 3px 0 var(--blush); }
+.tile .l { color: var(--label); }
+.tile.alert { box-shadow: inset 0 3px 0 #EBB7B3; }
+.tile.alert .l { color: var(--alert); }
+.pill.done { background: var(--okbg); color: var(--plum); }
+.hero { background: linear-gradient(150deg, #953735 0%, #A9504D 100%); }
+.hero::after { border-color: rgba(255,255,255,.18); }
+.btn.plum { background: var(--plum); }
+.selbar { background: var(--dplum); }
+.card, .tile, .rsvpbar, .welcome { box-shadow: 0 1px 2px rgba(149,55,53,.04), 0 6px 18px -14px rgba(149,55,53,.25); }
+.tile { box-shadow: inset 0 3px 0 var(--blush), 0 6px 18px -14px rgba(149,55,53,.25); }
+.tile.alert { box-shadow: inset 0 3px 0 #EBB7B3, 0 6px 18px -14px rgba(149,55,53,.25); }
+.bubble { background: var(--plum); }
+.segbar { background: #F3E1E0; }
 .field select { appearance: none; -webkit-appearance: none; padding-right: 34px !important; background-image: linear-gradient(45deg, transparent 50%, var(--plum) 50%), linear-gradient(135deg, var(--plum) 50%, transparent 50%); background-position: calc(100% - 17px) 52%, calc(100% - 12px) 52%; background-size: 5px 5px; background-repeat: no-repeat; color: var(--ink); }
 .field input:focus, .field select:focus, .field textarea:focus, .search:focus-within { outline: none; border-color: var(--mauve); box-shadow: 0 0 0 3px rgba(168,139,160,.22); }
 .field input[type=date], .field input[type=time] { -webkit-appearance: none; appearance: none; min-height: 44px; }
@@ -624,7 +639,8 @@ function renderHome() {
   const rides = S.rides.filter(r => r.Status !== 'Confirmed').length, lodg = S.lodging.filter(r => r.Status !== 'Confirmed').length;
   const qOpen = S.questions.filter(q => ['Not Started', 'Discussing', 'Needs Follow-Up'].includes(q.Status)).length;
   const songs = S.music.filter(m => m.Moment !== 'Do Not Play' && m.Status === 'Not Selected').length;
-  const tile = (c, l, v, sub, cls = '', go = '') => `<button class="tile ${cls}" style="--c:${c}" ${go}><span class="l">${l}</span><span class="v num">${v}</span><span class="s">${sub}</span></button>`;
+  const tile = (c, l, v, sub, cls = '', go = '') => { c = cls === 'alert' ? 'var(--alert)' : 'var(--deep)'; return _tile(c, l, v, sub, cls, go); };
+  const _tile = (c, l, v, sub, cls = '', go = '') => `<button class="tile ${cls}" style="--c:${c}" ${go}><span class="l">${l}</span><span class="v num">${v}</span><span class="s">${sub}</span></button>`;
   return { eyebrow: 'Wedding Dashboard', title: 'Home', html: `
   ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the tour</button><button class="btn alt sm" data-act="help">Starter steps</button></div></section>`}
   <section class="hero">
@@ -640,7 +656,7 @@ function renderHome() {
     ${tile('var(--plum)', 'Guests', s.acc, `accepted of ${s.total} · ${s.inv} awaiting`, '', 'data-go="guests"')}
     ${tile('#7D5A72', 'Vendors', s.booked, `booked of ${s.active} active`, '', 'data-go="vendors"')}
     ${tile('var(--dplum)', 'Tasks', Math.round(s.done / (s.counted || 1) * 100) + '%', `${s.done} of ${s.counted} done`, '', 'data-go="plan" data-sub="tasks" data-filter="open"')}
-    ${tile('var(--alert)', 'Attention', s.attention, `${s.over} overdue · ${s.soon} soon · ${s.risk} risk${s.risk === 1 ? '' : 's'}`, 'alert', 'data-go="plan" data-sub="tasks" data-filter="over"')}
+    ${tile('var(--alert)', 'Attention', s.attention, `${s.over} overdue · ${s.soon} soon · ${s.risk} risk${s.risk === 1 ? '' : 's'}`, s.attention ? 'alert' : '', 'data-go="plan" data-sub="tasks" data-filter="over"')}
     ${tile('var(--deep)', 'Still owed', money(s.owed).replace('$', '$'), `${money(s.paid)} paid so far`, '', 'data-go="money" data-sub="payments"')}
   </section>
   <section class="card flush">
@@ -653,11 +669,11 @@ function renderHome() {
   </section>
   <section class="card">
     <div class="sh"><h3>RSVPs</h3><button class="more" data-go="guests">Guest list</button></div>
-    <div class="rsvp">${donut([[s.acc, 'var(--plum)'], [s.inv, 'var(--rose)'], [s.dec, 'var(--alert)'], [s.wait, 'var(--smauve)']])}
+    <div class="rsvp">${donut([[s.acc, 'var(--deep)'], [s.inv, 'var(--rose)'], [s.dec, '#B9A2A8'], [s.wait, 'var(--smauve)']])}
     <div class="legend">
-      <div><i style="background:var(--plum)"></i>Accepted<b>${s.acc}</b></div>
+      <div><i style="background:var(--deep)"></i>Accepted<b>${s.acc}</b></div>
       <div><i style="background:var(--rose)"></i>Awaiting reply<b>${s.inv}</b></div>
-      <div><i style="background:var(--alert)"></i>Declined<b>${s.dec}</b></div>
+      <div><i style="background:#B9A2A8"></i>Declined<b>${s.dec}</b></div>
       <div><i style="background:var(--smauve)"></i>Waitlist<b>${s.wait}</b></div>
       ${s.inv ? `<button class="btn sm plum" data-act="rsvp" data-mode="sms" style="margin-top:4px">${I.sms} Ask ${s.inv} for RSVPs</button>` : ''}
     </div></div>
@@ -780,7 +796,7 @@ function renderVendors() {
     const order = ['Confirmed', 'Deposit Paid', 'Contract Signed', 'Selected', 'Under Review', 'Quote Received', 'Contacted', 'Prospect', 'Cancelled'];
     const pill = st => BOOKED.includes(st) ? 'pill done' : st === 'Cancelled' ? 'pill soft' : 'pill rose';
     const vs = S.vendors.map((v, i) => [v, i]).sort((a, b) => order.indexOf(a[0]['Vendor Status']) - order.indexOf(b[0]['Vendor Status']));
-    const stages = [['Booked', S.vendors.filter(v => BOOKED.includes(v['Vendor Status'])).length, 'var(--plum)'], ['Deciding', S.vendors.filter(v => ['Selected', 'Under Review', 'Quote Received'].includes(v['Vendor Status'])).length, 'var(--rose)'], ['Prospects', S.vendors.filter(v => ['Contacted', 'Prospect'].includes(v['Vendor Status'])).length, 'var(--smauve)']];
+    const stages = [['Booked', S.vendors.filter(v => BOOKED.includes(v['Vendor Status'])).length, 'var(--deep)'], ['Deciding', S.vendors.filter(v => ['Selected', 'Under Review', 'Quote Received'].includes(v['Vendor Status'])).length, 'var(--rose)'], ['Prospects', S.vendors.filter(v => ['Contacted', 'Prospect'].includes(v['Vendor Status'])).length, 'var(--smauve)']];
     const tot = stages.reduce((a, x) => a + x[1], 0) || 1;
     body = `<section class="card"><div class="sh"><h3>Pipeline</h3><span class="note">${s.booked} of ${s.active} booked</span></div><div class="stack">${stages.map(([l, n, c]) => n ? `<i style="flex:${n};background:${c}"></i>` : '').join('')}</div><div class="legend" style="grid-template-columns:repeat(3,auto);justify-content:space-between">${stages.map(([l, n, c]) => `<div><i style="background:${c}"></i>${l}<b style="margin-left:6px">${n}</b></div>`).join('')}</div></section>
     <section class="card flush">${vs.map(([v, i]) => { const bal = (+v['Quoted Cost'] || 0) - paidVendor(v.Company); return `<button class="row" data-vendor="${i}"><div class="avatar">${initials(v.Company)}</div><div class="main"><div class="t">${esc(v.Company)}</div><div class="m">${esc(v['Vendor Type'])} · ${esc(v.Contact)}</div></div><div class="end"><span class="${pill(v['Vendor Status'])}">${esc(v['Vendor Status'])}</span>${bal > 0 && BOOKED.includes(v['Vendor Status']) ? `<div class="m" style="margin-top:4px">${money(bal)} due</div>` : ''}</div></button>`; }).join('')}</section>`;
