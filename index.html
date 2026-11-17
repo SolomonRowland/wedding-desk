@@ -76,7 +76,7 @@ main { padding: 4px max(16px, env(safe-area-inset-right, 0px)) 110px max(16px, e
 
 /* bottom tabs */
 .tabs { position: fixed; left: 50%; transform: translateX(-50%); bottom: 0; width: 100%; max-width: 460px; z-index: 8; background: rgba(255,255,255,.94); backdrop-filter: blur(12px); border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px max(6px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(6px, env(safe-area-inset-left, 0px)); }
-@media (min-width: 520px) { .tabs { bottom: 24px; border-radius: 0 0 28px 28px; } }
+@media (min-width: 520px) { .tabs { bottom: 0; border-radius: 22px 22px 0 0; border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -8px 24px -18px rgba(149,55,53,.35); } }
 .tab { display: grid; justify-items: center; gap: 3px; padding: 6px 0 2px; font: 500 10.5px var(--body); color: var(--muted); border-radius: 12px; }
 .tab svg { width: 22px; height: 22px; }
 .tab[aria-current="page"] { color: var(--deep); }
