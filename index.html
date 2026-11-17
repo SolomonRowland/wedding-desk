@@ -362,6 +362,26 @@ button:disabled { opacity: .45; }
 .opts { display: flex; flex-wrap: wrap; gap: 6px; }
 .sharegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 #printroot { display: none; }
+.segbar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 2px; background: var(--blush); border-radius: 13px; padding: 3px; }
+.segbar button { padding: 9px 4px; border-radius: 10px; font: 600 13px var(--body); color: var(--plum); white-space: nowrap; transition: background-color .15s, color .15s; -webkit-tap-highlight-color: transparent; }
+.segbar button[aria-pressed="true"] { background: var(--surface); color: var(--deep); box-shadow: 0 1px 3px rgba(85,58,77,.18); }
+.segbar .n { opacity: .65; margin-left: 4px; font-weight: 500; }
+.segbar.small { background: transparent; border: 1px solid var(--line); padding: 2px; }
+.segbar.small button { padding: 7px 4px; font-size: 12.5px; }
+.segbar.small button[aria-pressed="true"] { background: var(--plum); color: #fff; box-shadow: none; }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+.filters .chip { padding: 6px 12px; font-size: 12px; }
+.searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.filtersel { padding: 0 28px 0 12px !important; border-radius: 12px; background-color: var(--surface); max-width: 46vw; font-size: 14px !important; }
+.sh h3 .cnt { font: 500 13px var(--body); color: var(--muted); margin-left: 4px; }
+.stack { display: flex; height: 12px; border-radius: 99px; overflow: hidden; gap: 2px; background: var(--petal); }
+.stack i { display: block; height: 100%; }
+.fab { position: fixed; z-index: 7; right: max(16px, calc(50% - 230px + 16px)); bottom: calc(80px + env(safe-area-inset-bottom, 0px)); display: inline-flex; align-items: center; gap: 6px; height: 48px; padding: 0 18px 0 14px; border-radius: 99px; background: var(--deep); color: #fff; font: 600 14px var(--body); box-shadow: 0 10px 24px -8px rgba(149,55,53,.6); transition: transform .12s ease; }
+.fab:active { transform: scale(.95); }
+.fab svg { width: 20px; height: 20px; }
+.fab[hidden] { display: none; }
+@media (min-width: 520px) { .fab { bottom: 108px; } }
+main { padding-bottom: 140px; }
 /* v10: contacts, compose, forms */
 .actbar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .actbar button { display: grid; justify-items: center; gap: 4px; padding: 11px 4px 9px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--deep); font: 600 11.5px var(--body); transition: transform .12s ease; -webkit-tap-highlight-color: transparent; }
@@ -569,8 +589,10 @@ function render() {
   const r = { home: renderHome, plan: renderPlan, guests: renderGuests, money: renderMoney, vendors: renderVendors }[UI.tab]();
   document.getElementById('eyebrow').textContent = r.eyebrow;
   document.getElementById('title').textContent = r.title;
-  document.getElementById('topact').innerHTML = (r.act || '') + `<button class="iconbtn" data-act="help" aria-label="Info Center">${I.help}</button><button class="iconbtn" data-act="settings" aria-label="Settings">${I.gear}</button>`;
+  document.getElementById('topact').innerHTML = (r.act || '') + hdrBtn('help', I.help, 'Info Center') + hdrBtn('settings', I.gear, 'Settings');
   view.innerHTML = r.html;
+  let fab = document.getElementById('fab'); if (!fab) { fab = document.createElement('button'); fab.id = 'fab'; fab.className = 'fab'; document.body.appendChild(fab); }
+  if (r.fab && !UI.selecting) { fab.hidden = false; fab.dataset.act = r.fab[0]; fab.setAttribute('aria-label', r.fab[1]); fab.innerHTML = `${I.plus}<span>${r.fab[1]}</span>`; } else fab.hidden = true;
   renderSelbar();
 }
 addEventListener('scroll', () => document.getElementById('top').classList.toggle('scrolled', scrollY > 4), { passive: true });
@@ -666,24 +688,28 @@ function taskRow(t) {
 }
 
 /* ---------- PLAN ---------- */
+function segbar(key, opts, small) { return `<div class="segbar ${small ? 'small' : ''}" role="tablist">${opts.map(([k, l, n]) => `<button role="tab" data-seg="${key}" data-val="${k}" aria-pressed="${UI[key] === k}" aria-selected="${UI[key] === k}">${l}${n !== undefined && n !== '' ? `<span class="n">${n}</span>` : ''}</button>`).join('')}</div>`; }
+const hdrBtn = (act, icon, label, extra = '') => `<button class="iconbtn" data-act="${act}" aria-label="${label}" title="${label}" ${extra}>${icon}</button>`;
 function segs(key, opts) { return `<div class="seg" role="tablist">${opts.map(([k, l, n]) => `<button class="chip" data-seg="${key}" data-val="${k}" aria-pressed="${UI[key] === k}">${l}${n !== undefined ? `<span class="n">${n}</span>` : ''}</button>`).join('')}</div>`; }
 function renderPlan() {
   const open = S.tasks.filter(OPEN).length;
   let body = '';
+  if (['risks', 'photos', 'music'].includes(UI.plan)) { UI.planList = UI.plan; UI.plan = 'lists'; }
+  UI.planList = UI.planList || 'photos';
+  const sub = UI.plan === 'lists' ? UI.planList : UI.plan;
   if (UI.plan === 'tasks') {
     const f = UI.planFilter, OV = t => t['Due Date'] && days(t['Due Date']) < 0, MO = t => t['Due Date'] && days(t['Due Date']) >= 0 && days(t['Due Date']) <= 31;
     const openT = S.tasks.filter(OPEN);
     const list = openT.filter(t => f === 'over' ? OV(t) : f === 'month' ? MO(t) : true).sort((a, b) => (a['Due Date'] || '9').localeCompare(b['Due Date'] || '9'));
     const groups = {}; list.forEach(t => { const d = D(t['Due Date']); const k = !d ? 'No date yet' : OV(t) ? 'Overdue' : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); (groups[k] = groups[k] || []).push(t); });
     const doneL = S.tasks.filter(t => !OPEN(t)).sort((a, b) => (b.doneOn || '').localeCompare(a.doneOn || '') || (b['Due Date'] || '').localeCompare(a['Due Date'] || ''));
-    body = `<div class="toolbar"><button class="btn plum sm" data-act="addtask">${I.plus} Add task</button><button class="btn alt sm" data-act="share" data-kind="tasks">${I.share} Share or print</button></div>
-    <div class="seg">${[['open', 'To do', openT.length], ['over', 'Overdue', openT.filter(OV).length], ['month', 'Next 30 days', openT.filter(MO).length]].map(([k, l, n]) => `<button class="chip" data-pf="${k}" aria-pressed="${f === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>
+    body = `<div class="filters">${[['open', 'All to do', openT.length], ['over', 'Overdue', openT.filter(OV).length], ['month', 'Next 30 days', openT.filter(MO).length]].map(([k, l, n]) => `<button class="chip" data-pf="${k}" aria-pressed="${f === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>
     <section class="card flush">${Object.entries(groups).map(([k, ts]) => `<div class="grp" ${k === 'Overdue' ? 'style="color:var(--alert)"' : ''}>${k}</div>${ts.map(taskRow).join('')}`).join('') || '<div class="empty">Nothing here. Nice work.</div>'}</section>
     <section class="card flush donecard"><button class="donehead" data-act="toggledone" aria-expanded="${UI.showDone}"><span class="check on">${I.check}</span>Completed<span class="badge">${doneL.length}</span><span class="chev">${I.chev}</span></button>${UI.showDone ? doneL.map(taskRow).join('') : ''}</section>`;
   } else if (UI.plan === 'dayof') {
     const ev = S.planner.slice().sort((a, b) => (a.Date + a.Time).localeCompare(b.Date + b.Time));
     const by = {}; ev.forEach(e => (by[e['Day Of'] + '|' + e.Date] = by[e['Day Of'] + '|' + e.Date] || []).push(e));
-    body = `<div class="toolbar"><button class="btn alt sm" data-act="share" data-kind="dayof">${I.share} Share or print the schedule</button></div>` + (ev.length ? '' : '<section class="card"><div class="empty">No wedding-day events yet.</div></section>') + Object.entries(by).map(([k, es]) => { const [n, dt] = k.split('|'); return `<section class="card flush"><div class="sh"><h3>${esc(n)}</h3><span class="pill soft">${fmtD(dt)}</span></div><div class="timeline">${es.map(e => `<div class="ev"><div class="tm">${time12(e.Time)}</div><div class="ln"><i></i></div><div><div class="a">${esc(e.Activity)}</div><div class="o">${esc(e.Owner)}${e.Music ? ' · ♪ ' + esc(e.Music) : ''}</div>${e.Notes ? `<div class="o">${esc(e.Notes)}</div>` : ''}</div></div>`).join('')}</div></section>`; }).join('');
+    body = (ev.length ? '' : '<section class="card"><div class="empty">No wedding-day events yet.</div></section>') + Object.entries(by).map(([k, es]) => { const [n, dt] = k.split('|'); return `<section class="card flush"><div class="sh"><h3>${esc(n)}</h3><span class="pill soft">${fmtD(dt)}</span></div><div class="timeline">${es.map(e => `<div class="ev"><div class="tm">${time12(e.Time)}</div><div class="ln"><i></i></div><div><div class="a">${esc(e.Activity)}</div><div class="o">${esc(e.Owner)}${e.Music ? ' · ♪ ' + esc(e.Music) : ''}</div>${e.Notes ? `<div class="o">${esc(e.Notes)}</div>` : ''}</div></div>`).join('')}</div></section>`; }).join('');
   } else if (UI.plan === 'questions') {
     const by = {}; S.questions.forEach((q, i) => (by[q.Category] = by[q.Category] || []).push([q, i]));
     const pill = st => st === 'Decided' || st === 'Shared with Vendors' || st === 'Added to Tasks' ? 'pill' : st === 'Not Started' ? 'pill red' : 'pill warn';
@@ -691,15 +717,17 @@ function renderPlan() {
     <div class="two"><div class="field"><label for="qs${i}">Status</label><select class="sel" id="qs${i}" data-qs="${i}" style="padding:9px 26px 9px 10px">${DATA.lists['Question Status'].map(o => `<option ${q.Status === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
     ${q.taskMade ? `<button class="btn alt sm" data-go="plan" data-sub="tasks" data-filter="open">${I.spark} Task created</button>` : `<div class="note">${S.auto.q ? 'Pick <b>Decided</b> and the next step is added to your tasks.' : ''}</div>`}</div>
     ${q['Action Item'] ? `<div class="note"><b style="color:var(--ink)">Next step:</b> ${esc(q['Action Item'])}</div>` : ''}</div>` : ''}`).join('')}`).join('')}</section>`;
-  } else if (UI.plan === 'risks') {
+  } else if (sub === 'risks') {
     body = `<section class="card flush">${S.risks.map(r => `<div class="row"><div class="main"><div class="t" style="white-space:normal">${esc(r.Risk)}</div><div class="m" style="white-space:normal">${esc(r.Notes)}</div></div><div class="end" style="display:grid;gap:4px;justify-items:end"><span class="pill ${r.Impact === 'High' ? 'red' : 'soft'}">Impact ${esc(r.Impact)}</span><span class="pill ${r.Probability === 'High' ? 'red' : 'soft'}">Odds ${esc(r.Probability)}</span><span class="pill ${r.Status === 'Open' ? 'rose' : ''}">${esc(r.Status)}</span></div></div>`).join('')}</section>`;
-  } else if (UI.plan === 'photos') {
+  } else if (sub === 'photos') {
     const by = {}; S.photos.forEach((p, i) => (by[p['Shot Category']] = by[p['Shot Category']] || []).push([p, i]));
     body = `<section class="card flush">${Object.entries(by).map(([c, ps]) => `<div class="grp">${esc(c)}</div>${ps.map(([p, i]) => `<div class="row ${p.Captured === 'Yes' ? 'isdone' : ''}"><button class="check sq ${p.Captured === 'Yes' ? 'on' : ''}" data-photo="${i}" aria-label="Captured">${I.check}</button><div class="main"><div class="t" style="white-space:normal">${esc(p['Shot Description'])}</div><div class="m">${esc(p.Location)}</div></div>${['High', 'Urgent'].includes(p.Priority) ? '<span class="pill rose">Must-have</span>' : ''}</div>`).join('')}`).join('')}</section>`;
-  } else if (UI.plan === 'music') {
+  } else if (sub === 'music') {
     body = `<section class="card flush">${S.music.map(m => `<div class="row"><div class="avatar" style="font-size:16px">♪</div><div class="main"><div class="t">${esc(m.Moment)}</div><div class="m">${esc(m.Song || 'No song yet')}</div></div><span class="pill ${m.Status === 'Confirmed with DJ/Band' ? 'done' : m.Status === 'Selected' ? '' : m.Moment === 'Do Not Play' ? 'red' : 'warn'}">${m.Moment === 'Do Not Play' ? 'Do not play' : m.Status === 'Confirmed with DJ/Band' ? 'Confirmed' : esc(m.Status)}</span></div>`).join('')}</section>`;
   }
-  return { eyebrow: `${open} tasks to do`, title: 'Plan', html: segs('plan', [['tasks', 'Tasks', open], ['dayof', 'Wedding day'], ['questions', 'Questionnaire'], ['risks', 'Risks', S.risks.filter(r => r.Status === 'Open').length], ['photos', 'Photos'], ['music', 'Music']]) + body };
+  if (UI.plan === 'lists') body = segbar('planList', [['photos', 'Photo shots'], ['music', 'Music'], ['risks', 'Risks']], true) + body;
+  const act = UI.plan === 'tasks' ? hdrBtn('share', I.share, 'Share or print tasks', 'data-kind="tasks"') : UI.plan === 'dayof' ? hdrBtn('share', I.share, 'Share or print the schedule', 'data-kind="dayof"') : '';
+  return { eyebrow: `${open} tasks to do`, title: 'Plan', act, fab: UI.plan === 'tasks' ? ['addtask', 'Task'] : null, html: segbar('plan', [['tasks', 'Tasks'], ['dayof', 'Day of'], ['questions', 'Decisions'], ['lists', 'Lists']]) + body };
 }
 
 /* ---------- GUESTS ---------- */
@@ -710,11 +738,10 @@ function renderGuests() {
     const map = { All: () => true, Accepted: p => p.RSVP === 'Accepted', Awaiting: p => p.RSVP === 'Invited', Declined: p => p.RSVP === 'Declined', Waitlist: p => p.RSVP === 'Waitlist', 'Wedding party': p => p['Group Role'] === 'Wedding Party' };
     const list = S.people.map((p, i) => [p, i]).filter(([p]) => map[F](p) && (!q || [p.Name, p.Relationship, p['Individual Role'], p.Phone, p.Email, p.Address].join(' ').toLowerCase().includes(q)));
     const pill = r => r === 'Accepted' ? 'pill done' : r === 'Declined' ? 'pill red' : r === 'Waitlist' ? 'pill soft' : 'pill rose';
-    body = `<label class="search">${I.search}<input id="q" type="search" placeholder="Search guests" value="${esc(UI.q)}" autocomplete="off"></label>
-    <div class="seg">${Object.keys(map).map(k => `<button class="chip" data-gf="${k}" aria-pressed="${F === k}">${k}<span class="n">${S.people.filter(map[k]).length}</span></button>`).join('')}</div>
-    <div class="toolbar"><button class="btn alt sm" data-act="addguest">${I.plus} Add</button><button class="btn alt sm" data-act="select">${I.select} ${UI.selecting ? 'Done' : 'Select'}</button><button class="btn alt sm" data-act="share" data-kind="guests">${I.share} Share</button></div>
+    body = `<div class="searchrow"><label class="search">${I.search}<input id="q" type="search" placeholder="Search guests" value="${esc(UI.q)}" autocomplete="off"></label>
+    <select class="sel filtersel" id="gfilter" aria-label="Show">${Object.keys(map).map(k => `<option value="${k}" ${F === k ? 'selected' : ''}>${k === 'All' ? 'Everyone' : k} (${S.people.filter(map[k]).length})</option>`).join('')}</select></div>
     ${s.inv ? `<section class="rsvpbar"><div class="hd"><b>${s.inv} still to reply</b><span class="note">${S.people.filter(p => p.RSVP === 'Invited' && p.rsvpAsked).length} asked so far</span></div><div class="acts"><button class="btn plum" data-act="rsvp" data-mode="sms">${I.sms} Text</button><button class="btn plum" data-act="rsvp" data-mode="email">${I.mail} Email</button><button class="btn alt" data-act="replies">${I.check} Replies</button></div></section>` : ''}
-    <section class="card flush">${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
+    <section class="card flush"><div class="sh"><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3><button class="more" data-act="select">${UI.selecting ? 'Done' : 'Select'}</button></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
   } else if (UI.guests === 'seating') {
     const att = S.people.filter(p => !['Declined', 'Waitlist'].includes(p.RSVP));
     const tables = [...new Set(att.map(p => p.Table).filter(Boolean))].sort((a, b) => a - b);
@@ -725,7 +752,7 @@ function renderGuests() {
     body = `<section class="card flush"><div class="sh"><h3>Hotel rooms</h3><span class="note">${S.lodging.filter(l => l.Status === 'Confirmed').length}/${S.lodging.length} confirmed</span></div>${S.lodging.map(l => `<div class="row"><div class="main"><div class="t">${esc(l.Guest)}</div><div class="m">${esc(l.Hotel)}${l.Confirmation ? ' · #' + esc(l.Confirmation) : ''}</div></div><span class="pill ${l.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(l.Status)}</span></div>`).join('')}</section>
     <section class="card flush"><div class="sh"><h3>Rides</h3><span class="note">${S.rides.filter(l => l.Status === 'Confirmed').length}/${S.rides.length} confirmed</span></div>${S.rides.map(r => `<div class="row"><div class="date" style="width:58px"><b style="font-size:14px">${time12(r.Time).replace(' ', '')}</b></div><div class="main"><div class="t" style="white-space:normal">${esc(r.Service)}</div><div class="m">${esc(r.Vendor)}</div></div><span class="pill ${r.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(r.Status)}</span></div>`).join('')}</section>`;
   }
-  return { eyebrow: `${s.acc} accepted · ${s.inv} awaiting`, title: 'Guests', html: segs('guests', [['list', 'Guest list', S.people.length], ['seating', 'Seating & meals'], ['stay', 'Hotels & rides']]) + body };
+  return { eyebrow: `${s.acc} accepted · ${s.inv} awaiting`, title: 'Guests', act: UI.guests === 'list' ? hdrBtn('share', I.share, 'Share or print the guest list', 'data-kind="guests"') : '', fab: UI.guests === 'list' ? ['addguest', 'Guest'] : null, html: segbar('guests', [['list', 'Guest list'], ['seating', 'Seating'], ['stay', 'Hotels & rides']]) + body };
 }
 
 /* ---------- MONEY ---------- */
@@ -743,10 +770,10 @@ function renderMoney() {
   } else {
     const up = S.payments.map((p, i) => [p, i]).filter(([p]) => p.Status !== 'Paid').sort((a, b) => (a[0]['Due Date'] || '9').localeCompare(b[0]['Due Date'] || '9'));
     const done = S.payments.map((p, i) => [p, i]).filter(([p]) => p.Status === 'Paid').sort((a, b) => (b[0]['Paid On'] || '').localeCompare(a[0]['Paid On'] || ''));
-    body = sum + `<div class="toolbar"><button class="btn plum sm" data-act="addpay">${I.plus} Add payment</button><button class="btn alt sm" data-act="share" data-kind="payments">${I.share} Share or print</button></div><section class="card flush"><div class="sh"><h3>Scheduled</h3><span class="note">${money(s.owed)}</span></div>${up.map(([p, i]) => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${i}" style="margin-top:4px">Mark paid</button></div></div>`).join('') || '<div class="empty">Everything is paid.</div>'}</section>
+    body = sum + `<section class="card flush"><div class="sh"><h3>Scheduled</h3><span class="note">${money(s.owed)}</span></div>${up.map(([p, i]) => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${i}" style="margin-top:4px">Mark paid</button></div></div>`).join('') || '<div class="empty">Everything is paid.</div>'}</section>
     <section class="card flush"><div class="sh"><h3>Paid</h3><span class="note">${money(s.paid)}</span></div>${done.map(([p]) => `<div class="row"><div class="check on">${I.check}</div><div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · paid ${fmtD(p['Paid On'] || p['Due Date'])}</div></div><div class="amt">${money(p.Amount)}</div></div>`).join('')}</section>`;
   }
-  return { eyebrow: `${Math.round(s.actual / (s.budget || 1) * 100)}% of budget booked`, title: 'Money', html: segs('money', [['budget', 'Budget'], ['payments', 'Payments', S.payments.filter(p => p.Status !== 'Paid').length]]) + body };
+  return { eyebrow: `${Math.round(s.actual / (s.budget || 1) * 100)}% of budget booked`, title: 'Money', act: UI.money === 'payments' ? hdrBtn('share', I.share, 'Share or print payments', 'data-kind="payments"') : '', fab: ['addpay', 'Payment'], html: segbar('money', [['budget', 'Budget'], ['payments', 'Payments']]) + body };
 }
 
 /* ---------- VENDORS ---------- */
@@ -756,14 +783,16 @@ function renderVendors() {
     const order = ['Confirmed', 'Deposit Paid', 'Contract Signed', 'Selected', 'Under Review', 'Quote Received', 'Contacted', 'Prospect', 'Cancelled'];
     const pill = st => BOOKED.includes(st) ? 'pill done' : st === 'Cancelled' ? 'pill soft' : 'pill rose';
     const vs = S.vendors.map((v, i) => [v, i]).sort((a, b) => order.indexOf(a[0]['Vendor Status']) - order.indexOf(b[0]['Vendor Status']));
-    body = `<div class="toolbar"><button class="btn plum sm" data-act="addvendor">${I.plus} Add vendor</button><button class="btn alt sm" data-act="addpay">${I.plus} Add payment</button></div><section class="card"><div class="sh"><h3>Pipeline</h3><span class="note">${s.booked} of ${s.active} booked</span></div><div class="bars">${order.slice(0, 8).reverse().map(st => { const n = S.vendors.filter(v => v['Vendor Status'] === st).length; return `<div class="bar3"><div class="top3"><span>${st}</span><span>${n}</span></div><div class="track" style="height:8px"><i style="width:${n / Math.max(1, ...order.map(o => S.vendors.filter(v => v['Vendor Status'] === o).length)) * 100}%;background:${BOOKED.includes(st) ? 'var(--plum)' : 'var(--mauve)'}"></i></div></div>`; }).join('')}</div></section>
+    const stages = [['Booked', S.vendors.filter(v => BOOKED.includes(v['Vendor Status'])).length, 'var(--plum)'], ['Deciding', S.vendors.filter(v => ['Selected', 'Under Review', 'Quote Received'].includes(v['Vendor Status'])).length, 'var(--rose)'], ['Prospects', S.vendors.filter(v => ['Contacted', 'Prospect'].includes(v['Vendor Status'])).length, 'var(--smauve)']];
+    const tot = stages.reduce((a, x) => a + x[1], 0) || 1;
+    body = `<section class="card"><div class="sh"><h3>Pipeline</h3><span class="note">${s.booked} of ${s.active} booked</span></div><div class="stack">${stages.map(([l, n, c]) => n ? `<i style="flex:${n};background:${c}"></i>` : '').join('')}</div><div class="legend" style="grid-template-columns:repeat(3,auto);justify-content:space-between">${stages.map(([l, n, c]) => `<div><i style="background:${c}"></i>${l}<b style="margin-left:6px">${n}</b></div>`).join('')}</div></section>
     <section class="card flush">${vs.map(([v, i]) => { const bal = (+v['Quoted Cost'] || 0) - paidVendor(v.Company); return `<button class="row" data-vendor="${i}"><div class="avatar">${initials(v.Company)}</div><div class="main"><div class="t">${esc(v.Company)}</div><div class="m">${esc(v['Vendor Type'])} · ${esc(v.Contact)}</div></div><div class="end"><span class="${pill(v['Vendor Status'])}">${esc(v['Vendor Status'])}</span>${bal > 0 && BOOKED.includes(v['Vendor Status']) ? `<div class="m" style="margin-top:4px">${money(bal)} due</div>` : ''}</div></button>`; }).join('')}</section>`;
   } else if (UI.vend === 'places') {
     body = `<section class="card flush">${S.locations.map((l, i) => `<button class="row" data-ca="map" data-ck="l:${i}"><div class="main"><div class="t">${esc(l['Location Name'])}</div><div class="m" style="white-space:normal">${esc(l['Location Address'] || 'No address yet')}</div>${l.Notes ? `<div class="m" style="white-space:normal">${esc(l.Notes)}</div>` : ''}</div><span class="cbtn" aria-hidden="true">${I.pin}</span></button>`).join('')}</section>`;
   } else {
     body = `<section class="card flush">${S.equipment.map(e => { const gap = (+e['Qty Needed'] || 0) - (+e['Qty Confirmed'] || 0); return `<div class="row"><div class="main"><div class="t">${esc(e.Item)}</div><div class="m">${esc(e['Vendor / Source'])} · ${esc(e.Category)}</div></div><div class="end"><div class="amt num">${e['Qty Confirmed'] || 0}/${e['Qty Needed'] || 0}</div>${gap > 0 ? `<span class="pill warn">${gap} short</span>` : `<span class="pill">${esc(e.Status)}</span>`}</div></div>`; }).join('')}</section>`;
   }
-  return { eyebrow: `${s.booked} booked`, title: 'Vendors', html: segs('vend', [['vendors', 'Vendors', S.vendors.length], ['places', 'Places'], ['rentals', 'Rentals']]) + body };
+  return { eyebrow: `${s.booked} booked`, title: 'Vendors', fab: UI.vend === 'vendors' ? ['addvendor', 'Vendor'] : null, html: segbar('vend', [['vendors', 'Vendors'], ['places', 'Places'], ['rentals', 'Rentals']]) + body };
 }
 
 /* ---------- sheets ---------- */
@@ -1102,12 +1131,13 @@ const FAQ = [
   ['What do the colored tiles on Home mean?', 'Each tile is a quick summary: how much of your budget is booked, how many guests accepted, how many vendors are booked, how far along your tasks are, and anything that needs attention. Tap a tile to open that area.'],
   ['What counts as "Needs attention"?', 'Tasks past their due date, high-priority tasks due in the next 30 days, and risks marked high impact and high odds. Clear those and the tile goes to zero.'],
   ['How do I mark a task done, or undo it?', 'Tap the circle next to the task. It slides into the Completed section at the bottom of Plan, crossed off. Changed your mind? Tap Undo on the message that appears, or open Completed and tap the circle again.'],
+  ['Where are the add buttons?', 'The round + button at the bottom right adds whatever fits the page you are on: a task on Plan, a guest on Guests, a payment on Money, a vendor on Vendors. The share icon at the top shares or prints that page.'],
   ['What are smart steps?', 'Small automations that save you typing. For example, marking a questionnaire item Decided adds its next step to your tasks, and signing a vendor contract adds a deposit reminder. Tasks made this way show an Auto tag. You can turn each one off below.'],
   ['How do RSVP texts and emails work?', 'On the Guests tab, tap Text or Email in the "still to reply" card. Pick a message, then tap each name: your phone opens a ready-to-send message with their name and your details filled in. Replies come straight back to you. When someone answers, tap Replies and mark them Yes or No with their meal. Add an RSVP website in Settings if you have one and it goes in every message.'],
   ['How do I call, text, email or get directions?', 'Open any guest, vendor or key contact. The four buttons at the top call, text, email or map them. Text and email open with a message already written for you to edit. Tap any address to get directions in your phone\'s maps app. If something is missing, tap Add to fill it in.'],
   ['Where do I keep vendor website and portal logins?', 'Open a vendor and tap the pencil. Add their website and, if they gave you a client portal, the username and password. The password stays hidden until you tap the eye, and you can copy it with one tap. Logins stay on this phone only and are never put in Excel downloads or shared PDFs.'],
   ['Can I edit or remove a guest, vendor or task?', 'Yes. Tap the pencil on a guest or vendor, or tap any task, to change it. Each edit screen has a remove button, and you can undo right after.'],
-  ['How do I share my task list with someone?', 'On Plan, tap Share or print. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
+  ['How do I share my task list with someone?', 'On Plan, tap the share icon at the top. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
   ['What is the difference between Booked and Paid?', 'Booked is what you have agreed to pay vendors. Paid is money already sent. The gap between them is what you still owe.'],
   ['Can my partner or planner use this too?', 'Not yet. Your plan is saved on this phone. Use Share to send them a copy, or Download Excel in Settings to hand over everything.'],
   ['How long is the tour, and can I skip around?', 'It runs 5 minutes 29 seconds, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
@@ -1453,6 +1483,7 @@ document.addEventListener('click', e => {
 document.addEventListener('change', e => {
   const t = e.target, ds = t.dataset;
   if (t.id === 'xlfile' && t.files[0]) return readExcel(t.files[0]);
+  if (t.id === 'gfilter') { UI.gFilter = t.value; return render(); }
   if (ds.qs) return setQStatus(+ds.qs, t.value);
   if (ds.qans) { S.questions[+ds.qans].Answer = t.value; save(); return toast('Answer saved'); }
   if (ds.vs) { const v = S.vendors[+ds.vs]; v['Vendor Status'] = t.value; vendorChanged(v); save(); render(); const sc = layer.querySelector('.sheet')?.scrollTop || 0; vendorSheet(+ds.vs); layer.querySelector('.sheet').scrollTop = sc; return; }
