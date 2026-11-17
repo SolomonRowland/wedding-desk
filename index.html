@@ -393,7 +393,7 @@ button:disabled { opacity: .45; }
 .filters { display: flex; gap: 6px; flex-wrap: wrap; }
 .filters .chip { padding: 6px 12px; font-size: 12px; }
 .searchrow { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
-.filtersel { padding: 0 28px 0 12px !important; border-radius: 12px; background-color: var(--surface); max-width: 46vw; font-size: 14px !important; }
+.filtersel { padding: 0 28px 0 12px !important; border-radius: 12px; background-color: var(--surface); max-width: 40vw; font-size: 14px !important; }
 .sh h3 .cnt { font: 500 13px var(--body); color: var(--muted); margin-left: 4px; }
 .stack { display: flex; height: 12px; border-radius: 99px; overflow: hidden; gap: 2px; background: var(--petal); }
 .stack i { display: block; height: 100%; }
@@ -456,10 +456,46 @@ input.tick { width: 22px; height: 22px; accent-color: var(--plum); flex: none; }
   #printroot .paper { box-shadow: none; max-height: none; overflow: visible; font-size: 11pt; padding: 0; }
   #printroot .paper b { font-size: 22pt; }
 }
+
+/* v15: Tend-style header band */
+.top { position: relative; top: auto; z-index: 2; display: grid; gap: 14px; background: linear-gradient(155deg, #953735 0%, #A9504D 100%); color: #fff; padding: calc(18px + env(safe-area-inset-top, 0px)) max(18px, env(safe-area-inset-right, 0px)) 16px max(18px, env(safe-area-inset-left, 0px)); border: 0; border-radius: 0 0 26px 26px; overflow: hidden; margin-bottom: 14px; }
+.top::after { content: ""; position: absolute; right: -50px; top: -60px; width: 190px; height: 190px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,.14); pointer-events: none; }
+.top > * { position: relative; z-index: 1; }
+.top { justify-content: normal; grid-template-columns: minmax(0,1fr); }
+.top .hrow { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.top .htxt { min-width: 0; }
+.top .eyebrow, .grp.x { color: #F6D4D2 !important; margin-bottom: 6px; }
+.top h1 { color: #fff; font-size: 30px; line-height: 1.05; text-wrap: balance; }
+.top .hsub { color: #F6D4D2; font-size: 12.5px; margin-top: 6px; }
+.top .act { flex: none; align-items: center; }
+.top .iconbtn { background: rgba(255,255,255,.16); border-color: rgba(255,255,255,.22); color: #fff; }
+.addpill { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 10px; border-radius: 99px; background: #fff; color: var(--deep); font: 600 13.5px var(--body); box-shadow: 0 4px 12px -6px rgba(0,0,0,.35); transition: transform .12s ease; -webkit-tap-highlight-color: transparent; }
+.addpill svg { width: 18px; height: 18px; }
+.addpill:active { transform: scale(.95); }
+.top .segbar { background: rgba(255,255,255,.16); }
+.top .segbar button { color: #fff; }
+.top .segbar button[aria-pressed="true"] { background: #fff; color: var(--deep); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.top .search { background: rgba(255,255,255,.96); border-color: transparent; }
+.top .filtersel { border-color: transparent !important; background-color: rgba(255,255,255,.96) !important; }
+.top.home { padding-bottom: 54px; }
+.top .count { display: flex; align-items: baseline; gap: 8px; }
+.top .count b { font: 600 46px/0.9 var(--body); letter-spacing: -.03em; font-variant-numeric: lining-nums tabular-nums; }
+.top .count span { font-size: 13px; color: #F6D4D2; }
+.top .tl { margin-top: 0; }
+.top.home + main { margin-top: -54px; position: relative; z-index: 3; }
+main { padding-top: 0; }
+.cfm { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 24px; background: rgba(60,30,35,.42); animation: fade .15s ease; }
+.cfm .box { width: 100%; max-width: 340px; background: var(--surface); border-radius: 20px; padding: 22px 20px 16px; box-shadow: 0 30px 60px -20px rgba(0,0,0,.4); animation: pop .18s ease; }
+.cfm h3 { font: 600 20px/1.2 var(--display); color: var(--deep); margin: 0 0 6px; }
+.cfm p { margin: 0 0 18px; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.cfm .btnrow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.btn.danger { background: var(--alert); color: #fff; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes pop { from { opacity: 0; transform: scale(.94); } }
 </style>
 
 <div class="app" id="app">
-  <header class="top" id="top"><div><div class="eyebrow" id="eyebrow"></div><h1 id="title"></h1></div><div class="act" id="topact"></div></header>
+  <header class="top" id="top"></header>
   <main id="view"></main>
   <nav class="tabs" id="tabs" aria-label="Sections"></nav>
 </div>
@@ -605,18 +641,28 @@ function go(tab, sub, filter) {
   if (location.hash.slice(1) !== tab) history.replaceState(null, '', '#' + tab);
   render(); window.scrollTo(0, 0); view.classList.remove('enter'); void view.offsetWidth; view.classList.add('enter');
 }
+let ADD_STYLE = 'pill';
+function startFresh() { S = freshState(); for (const k of ['tasks', 'risks', 'budget', 'payments', 'people', 'vendors', 'planner', 'locations', 'photos', 'music', 'rides', 'lodging', 'equipment']) S[k] = []; S.questions = S.questions.map(q => ({ ...q, Answer: '', Status: 'Not Started', 'Action Item': '', Notes: '' })); S.details = { couple: '', eng: '', wd: '', time: '', venue: '', street: '', city: '', target: '', planner: '', pphone: '', doc: '', dphone: '', rsvpBy: '', rsvpLink: '', meals: 'Chicken, Beef, Fish, Vegetarian', pemail: '', paddr: '', demail: '', daddr: '' }; S.seenWelcome = true; save(); closeSheet(); go('home'); toast('All clear. Add your details to begin.', { label: 'Settings', fn: settingsSheet }); }
+function confirmBox(title, msg, ok, fn) {
+  document.querySelector('.cfm')?.remove();
+  const el = document.createElement('div'); el.className = 'cfm'; el.setAttribute('role', 'alertdialog'); el.setAttribute('aria-modal', 'true');
+  el.innerHTML = `<div class="box"><h3>${esc(title)}</h3><p>${msg}</p><div class="btnrow"><button class="btn alt" data-cfm="0">Cancel</button><button class="btn danger" data-cfm="1">${esc(ok)}</button></div></div>`;
+  el.addEventListener('click', e => { const b = e.target.closest('[data-cfm]'); if (!b && e.target !== el) return; e.stopPropagation(); el.remove(); if (b && b.dataset.cfm === '1') fn(); });
+  document.body.appendChild(el); el.querySelector('[data-cfm="1"]').focus();
+}
 function render() {
   document.getElementById('tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-go="${k}" ${UI.tab === k ? 'aria-current="page"' : ''}>${I[k]}<span>${l}</span><i class="dot"></i></button>`).join('');
   const r = { home: renderHome, plan: renderPlan, guests: renderGuests, money: renderMoney, vendors: renderVendors }[UI.tab]();
-  document.getElementById('eyebrow').textContent = r.eyebrow;
-  document.getElementById('title').textContent = r.title;
-  document.getElementById('topact').innerHTML = (r.act || '') + hdrBtn('help', I.help, 'Info Center') + hdrBtn('settings', I.gear, 'Settings');
+  const top = document.getElementById('top'); top.className = 'top' + (UI.tab === 'home' ? ' home' : '');
+  const pill = r.fab && ADD_STYLE === 'pill' && !UI.selecting ? `<button class="addpill" data-act="${r.fab[0]}" aria-label="Add ${r.fab[1]}">${I.plus}Add</button>` : '';
+  const act = UI.tab === 'home' ? hdrBtn('help', I.help, 'Info Center') + hdrBtn('settings', I.gear, 'Settings') : (r.act || '') + pill;
+  top.innerHTML = `<div class="hrow"><div class="htxt"><div class="eyebrow">${esc(r.eyebrow)}</div><h1>${esc(r.title)}</h1>${r.sub ? `<div class="hsub">${r.sub}</div>` : ''}</div><div class="act">${act}</div></div>${r.head || ''}${r.tabs || ''}${r.tools || ''}`;
   view.innerHTML = r.html;
   let fab = document.getElementById('fab'); if (!fab) { fab = document.createElement('button'); fab.id = 'fab'; fab.className = 'fab'; document.body.appendChild(fab); }
-  if (r.fab && !UI.selecting) { fab.hidden = false; fab.dataset.act = r.fab[0]; fab.setAttribute('aria-label', r.fab[1]); fab.innerHTML = `${I.plus}<span>${r.fab[1]}</span>`; } else fab.hidden = true;
+  if (r.fab && ADD_STYLE === 'fab' && !UI.selecting) { fab.hidden = false; fab.dataset.act = r.fab[0]; fab.setAttribute('aria-label', r.fab[1]); fab.innerHTML = `${I.plus}<span>${r.fab[1]}</span>`; } else fab.hidden = true;
   renderSelbar();
 }
-addEventListener('scroll', () => document.getElementById('top').classList.toggle('scrolled', scrollY > 4), { passive: true });
+
 
 /* ---------- HOME ---------- */
 function donut(parts, size = 128, w = 18) {
@@ -641,47 +687,43 @@ function renderHome() {
   const songs = S.music.filter(m => m.Moment !== 'Do Not Play' && m.Status === 'Not Selected').length;
   const tile = (c, l, v, sub, cls = '', go = '') => { c = cls === 'alert' ? 'var(--alert)' : 'var(--deep)'; return _tile(c, l, v, sub, cls, go); };
   const _tile = (c, l, v, sub, cls = '', go = '') => `<button class="tile ${cls}" style="--c:${c}" ${go}><span class="l">${l}</span><span class="v num">${v}</span><span class="s">${sub}</span></button>`;
-  return { eyebrow: 'Wedding Dashboard', title: 'Home', html: `
-  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the tour</button><button class="btn alt sm" data-act="help">Starter steps</button></div></section>`}
-  <section class="hero">
-    <div class="k">${d.wd ? esc(longD(d.wd)) : 'Your wedding'}</div>
-    <h2>${esc(d.couple || 'Welcome!')}</h2>
-    <div class="sub">${[d.venue, d.city, d.time ? time12(d.time) : ''].filter(Boolean).map(esc).join(' · ') || 'Add your names, date and venue to get started.'}</div>
-    ${d.wd ? `<div class="count"><b class="num">${s.togo}</b><span>days to go</span></div>` : `<button class="btn sm" data-act="settings" style="margin-top:14px;background:#fff;color:var(--deep)">${I.gear} Add your wedding details</button>`}
+  const head = `<div class="hsub">${[d.venue, d.city, d.time ? time12(d.time) : ''].filter(Boolean).map(esc).join(' · ') || 'Add your names, date and venue to get started.'}</div>
+    ${d.wd ? `<div class="count"><b class="num">${s.togo}</b><span>Days to Go</span></div>` : `<button class="btn sm" data-act="settings" style="margin-top:12px;background:#fff;color:var(--deep);justify-self:start">${I.gear} Add Your Wedding Details</button>`}
     <div class="tl"><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
-    <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning timeline'}</span><span>${Math.round(s.pct * 100)}% of planning time used</span></div></div>
-  </section>
+    <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning Timeline'}</span><span>${Math.round(s.pct * 100)}% of Planning Time Used</span></div></div>`;
+  return { eyebrow: d.wd ? longD(d.wd) : 'Your Wedding', title: d.couple || 'Welcome!', head, html: `
+  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to wedding planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (5:45, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
   <section class="tiles">
     ${tile('var(--hdr)', 'Budget', Math.round(s.actual / (s.budget || 1) * 100) + '%', `${money(s.actual)} booked`, '', 'data-go="money"')}
     ${tile('var(--plum)', 'Guests', s.acc, `accepted of ${s.total} · ${s.inv} awaiting`, '', 'data-go="guests"')}
     ${tile('#7D5A72', 'Vendors', s.booked, `booked of ${s.active} active`, '', 'data-go="vendors"')}
     ${tile('var(--dplum)', 'Tasks', Math.round(s.done / (s.counted || 1) * 100) + '%', `${s.done} of ${s.counted} done`, '', 'data-go="plan" data-sub="tasks" data-filter="open"')}
     ${tile('var(--alert)', 'Attention', s.attention, `${s.over} overdue · ${s.soon} soon · ${s.risk} risk${s.risk === 1 ? '' : 's'}`, s.attention ? 'alert' : '', 'data-go="plan" data-sub="tasks" data-filter="over"')}
-    ${tile('var(--deep)', 'Still owed', money(s.owed).replace('$', '$'), `${money(s.paid)} paid so far`, '', 'data-go="money" data-sub="payments"')}
+    ${tile('var(--deep)', 'Still Owed', money(s.owed).replace('$', '$'), `${money(s.paid)} paid so far`, '', 'data-go="money" data-sub="payments"')}
   </section>
   <section class="card flush">
-    <div class="sh"><h3>Up next</h3><button class="more" data-go="plan" data-sub="tasks" data-filter="open">All tasks</button></div>
+    <div class="sh"><h3>Up Next</h3><button class="more" data-go="plan" data-sub="tasks" data-filter="open">All Tasks</button></div>
     ${tasks.map(taskRow).join('') || '<div class="empty">You\'re all caught up.</div>'}
   </section>
   <section class="card flush">
-    <div class="sh"><h3>Payments coming up</h3><button class="more" data-go="money" data-sub="payments">All payments</button></div>
-    ${pays.map(p => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${S.payments.indexOf(p)}" style="margin-top:4px">Mark paid</button></div></div>`).join('') || '<div class="empty">Nothing scheduled.</div>'}
+    <div class="sh"><h3>Payments Coming Up</h3><button class="more" data-go="money" data-sub="payments">All Payments</button></div>
+    ${pays.map(p => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${S.payments.indexOf(p)}" style="margin-top:4px">Mark Paid</button></div></div>`).join('') || '<div class="empty">Nothing scheduled.</div>'}
   </section>
   <section class="card">
-    <div class="sh"><h3>RSVPs</h3><button class="more" data-go="guests">Guest list</button></div>
+    <div class="sh"><h3>RSVPs</h3><button class="more" data-go="guests">Guest List</button></div>
     <div class="rsvp">${donut([[s.acc, 'var(--deep)'], [s.inv, 'var(--rose)'], [s.dec, '#B9A2A8'], [s.wait, 'var(--smauve)']])}
     <div class="legend">
       <div><i style="background:var(--deep)"></i>Accepted<b>${s.acc}</b></div>
-      <div><i style="background:var(--rose)"></i>Awaiting reply<b>${s.inv}</b></div>
+      <div><i style="background:var(--rose)"></i>Awaiting Reply<b>${s.inv}</b></div>
       <div><i style="background:#B9A2A8"></i>Declined<b>${s.dec}</b></div>
       <div><i style="background:var(--smauve)"></i>Waitlist<b>${s.wait}</b></div>
       ${s.inv ? `<button class="btn sm plum" data-act="rsvp" data-mode="sms" style="margin-top:4px">${I.sms} Ask ${s.inv} for RSVPs</button>` : ''}
     </div></div>
   </section>
-  ${(() => { const L = [[noTable, 'accepted, no table', 'data-go="guests" data-sub="seating"'], [thanks, 'thank-yous owed', 'data-go="guests" data-sub="list"'], [rides, 'rides to confirm', 'data-go="guests" data-sub="stay"'], [lodg, 'rooms to confirm', 'data-go="guests" data-sub="stay"'], [qOpen, 'decisions open', 'data-go="plan" data-sub="questions"'], [songs, 'songs to pick', 'data-go="plan" data-sub="music"']].filter(x => x[0]);
-    return L.length ? `<section class="card"><div class="sh"><h3>Loose ends</h3></div><div class="loosechips">${L.map(([n, l, g]) => `<button ${g}><b>${n}</b> ${l}</button>`).join('')}</div></section>` : ''; })()}
+  ${(() => { const L = [[noTable, 'Accepted, No Table', 'data-go="guests" data-sub="seating"'], [thanks, 'Thank-Yous Owed', 'data-go="guests" data-sub="list"'], [rides, 'Rides to Confirm', 'data-go="guests" data-sub="stay"'], [lodg, 'Rooms to Confirm', 'data-go="guests" data-sub="stay"'], [qOpen, 'Decisions Open', 'data-go="plan" data-sub="questions"'], [songs, 'Songs to Pick', 'data-go="plan" data-sub="music"']].filter(x => x[0]);
+    return L.length ? `<section class="card"><div class="sh"><h3>Loose Ends</h3></div><div class="loosechips">${L.map(([n, l, g]) => `<button ${g}><b>${n}</b> ${l}</button>`).join('')}</div></section>` : ''; })()}
   <section class="card flush">
-    <div class="sh"><h3>Key contacts</h3></div>
+    <div class="sh"><h3>Key Contacts</h3></div>
     ${d.venue ? keyRow('k:venue') : ''}${keyRow('k:planner')}${keyRow('k:doc')}
     ${d.venue || d.planner || d.doc ? '' : '<div class="empty">Add your venue, planner and day-of contact in Settings.</div>'}
   </section>` };
@@ -696,7 +738,7 @@ function taskRow(t) {
   const i = S.tasks.indexOf(t), done = t.Status === 'Completed';
   const off = !OPEN(t), pr = !off && ['High', 'Urgent'].includes(t.Priority) ? `<span class="pill red">${t.Priority}</span>` : '';
   const meta = off ? `${esc(t.Owner)} · ${t.Status === 'Cancelled' ? 'Cancelled' : 'Done' + (t.doneOn ? ' ' + fmtD(t.doneOn) : '')}` : `${esc(t.Owner)} · ${esc(t.Category)}${t['Due Date'] ? ' · ' + fmtD(t['Due Date']) : ''}`;
-  return `<div class="row"><button class="check ${done ? 'on' : ''}" data-task="${i}" aria-label="${done ? 'Mark not done' : 'Mark done'}: ${esc(t.Task)}">${I.check}</button>
+  return `<div class="row"><button class="check ${done ? 'on' : ''}" data-task="${i}" aria-label="${done ? 'Mark Not Done' : 'Mark Done'}: ${esc(t.Task)}">${I.check}</button>
   <button class="main" data-edittask="${i}" aria-label="Edit task: ${esc(t.Task)}"><div class="t">${esc(t.Task)}</div><div class="m">${meta}${t.auto ? `<span class="auto">${I.spark.replace('<svg', '<svg width="9" height="9"')} Auto</span>` : ''}</div></button><div class="end">${off ? '' : dueText(t['Due Date'])}${pr ? '<div style="margin-top:4px">' + pr + '</div>' : ''}</div></div>`;
 }
 
@@ -716,7 +758,7 @@ function renderPlan() {
     const list = openT.filter(t => f === 'over' ? OV(t) : f === 'month' ? MO(t) : true).sort((a, b) => (a['Due Date'] || '9').localeCompare(b['Due Date'] || '9'));
     const groups = {}; list.forEach(t => { const d = D(t['Due Date']); const k = !d ? 'No date yet' : OV(t) ? 'Overdue' : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); (groups[k] = groups[k] || []).push(t); });
     const doneL = S.tasks.filter(t => !OPEN(t)).sort((a, b) => (b.doneOn || '').localeCompare(a.doneOn || '') || (b['Due Date'] || '').localeCompare(a['Due Date'] || ''));
-    body = `<div class="filters">${[['open', 'All to do', openT.length], ['over', 'Overdue', openT.filter(OV).length], ['month', 'Next 30 days', openT.filter(MO).length]].map(([k, l, n]) => `<button class="chip" data-pf="${k}" aria-pressed="${f === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>
+    body = `<div class="filters">${[['open', 'All to Do', openT.length], ['over', 'Overdue', openT.filter(OV).length], ['month', 'Next 30 Days', openT.filter(MO).length]].map(([k, l, n]) => `<button class="chip" data-pf="${k}" aria-pressed="${f === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>
     <section class="card flush">${Object.entries(groups).map(([k, ts]) => `<div class="grp" ${k === 'Overdue' ? 'style="color:var(--alert)"' : ''}>${k}</div>${ts.map(taskRow).join('')}`).join('') || '<div class="empty">Nothing here. Nice work.</div>'}</section>
     <section class="card flush donecard"><button class="donehead" data-act="toggledone" aria-expanded="${UI.showDone}"><span class="check on">${I.check}</span>Completed<span class="badge">${doneL.length}</span><span class="chev">${I.chev}</span></button>${UI.showDone ? doneL.map(taskRow).join('') : ''}</section>`;
   } else if (UI.plan === 'dayof') {
@@ -726,7 +768,7 @@ function renderPlan() {
   } else if (UI.plan === 'questions') {
     const by = {}; S.questions.forEach((q, i) => (by[q.Category] = by[q.Category] || []).push([q, i]));
     const pill = st => st === 'Decided' || st === 'Shared with Vendors' || st === 'Added to Tasks' ? 'pill' : st === 'Not Started' ? 'pill red' : 'pill warn';
-    body = `<section class="card flush">${Object.entries(by).map(([c, qs]) => `<div class="grp">${esc(c)} · ${qs.filter(([q]) => ['Decided', 'Shared with Vendors', 'Added to Tasks'].includes(q.Status)).length}/${qs.length}</div>${qs.map(([q, i]) => `<button class="row" data-q="${i}"><div class="avatar" style="width:26px;height:26px;font-size:12px">?</div><div class="main"><div class="t" style="white-space:normal">${esc(q.Question)}</div></div><span class="${pill(q.Status)}">${esc(q.Status)}</span></button>${UI.openQ === i ? `<div class="qbox"><div class="field"><label for="qa${i}">Your answer</label><textarea id="qa${i}" data-qans="${i}" placeholder="Type your answer here">${esc(q.Answer)}</textarea></div>
+    body = `<section class="card flush">${Object.entries(by).map(([c, qs]) => `<div class="grp">${esc(c)} · ${qs.filter(([q]) => ['Decided', 'Shared with Vendors', 'Added to Tasks'].includes(q.Status)).length}/${qs.length}</div>${qs.map(([q, i]) => `<button class="row" data-q="${i}"><div class="avatar" style="width:26px;height:26px;font-size:12px">?</div><div class="main"><div class="t" style="white-space:normal">${esc(q.Question)}</div></div><span class="${pill(q.Status)}">${esc(q.Status)}</span></button>${UI.openQ === i ? `<div class="qbox"><div class="field"><label for="qa${i}">Your Answer</label><textarea id="qa${i}" data-qans="${i}" placeholder="Type your answer here">${esc(q.Answer)}</textarea></div>
     <div class="two"><div class="field"><label for="qs${i}">Status</label><select class="sel" id="qs${i}" data-qs="${i}" style="padding:9px 26px 9px 10px">${DATA.lists['Question Status'].map(o => `<option ${q.Status === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
     ${q.taskMade ? `<button class="btn alt sm" data-go="plan" data-sub="tasks" data-filter="open">${I.spark} Task created</button>` : `<div class="note">${S.auto.q ? 'Pick <b>Decided</b> and the next step is added to your tasks.' : ''}</div>`}</div>
     ${q['Action Item'] ? `<div class="note"><b style="color:var(--ink)">Next step:</b> ${esc(q['Action Item'])}</div>` : ''}</div>` : ''}`).join('')}`).join('')}</section>`;
@@ -736,36 +778,38 @@ function renderPlan() {
     const by = {}; S.photos.forEach((p, i) => (by[p['Shot Category']] = by[p['Shot Category']] || []).push([p, i]));
     body = `<section class="card flush">${Object.entries(by).map(([c, ps]) => `<div class="grp">${esc(c)}</div>${ps.map(([p, i]) => `<div class="row ${p.Captured === 'Yes' ? 'isdone' : ''}"><button class="check sq ${p.Captured === 'Yes' ? 'on' : ''}" data-photo="${i}" aria-label="Captured">${I.check}</button><div class="main"><div class="t" style="white-space:normal">${esc(p['Shot Description'])}</div><div class="m">${esc(p.Location)}</div></div>${['High', 'Urgent'].includes(p.Priority) ? '<span class="pill rose">Must-have</span>' : ''}</div>`).join('')}`).join('')}</section>`;
   } else if (sub === 'music') {
-    body = `<section class="card flush">${S.music.map(m => `<div class="row"><div class="avatar" style="font-size:16px">♪</div><div class="main"><div class="t">${esc(m.Moment)}</div><div class="m">${esc(m.Song || 'No song yet')}</div></div><span class="pill ${m.Status === 'Confirmed with DJ/Band' ? 'done' : m.Status === 'Selected' ? '' : m.Moment === 'Do Not Play' ? 'red' : 'warn'}">${m.Moment === 'Do Not Play' ? 'Do not play' : m.Status === 'Confirmed with DJ/Band' ? 'Confirmed' : esc(m.Status)}</span></div>`).join('')}</section>`;
+    body = `<section class="card flush">${S.music.map(m => `<div class="row"><div class="avatar" style="font-size:16px">♪</div><div class="main"><div class="t">${esc(m.Moment)}</div><div class="m">${esc(m.Song || 'No song yet')}</div></div><span class="pill ${m.Status === 'Confirmed with DJ/Band' ? 'done' : m.Status === 'Selected' ? '' : m.Moment === 'Do Not Play' ? 'red' : 'warn'}">${m.Moment === 'Do Not Play' ? 'Do Not Play' : m.Status === 'Confirmed with DJ/Band' ? 'Confirmed' : esc(m.Status)}</span></div>`).join('')}</section>`;
   }
-  if (UI.plan === 'lists') body = segbar('planList', [['photos', 'Photo shots'], ['music', 'Music'], ['risks', 'Risks']], true) + body;
-  const act = UI.plan === 'tasks' ? hdrBtn('share', I.share, 'Share or print tasks', 'data-kind="tasks"') : UI.plan === 'dayof' ? hdrBtn('share', I.share, 'Share or print the schedule', 'data-kind="dayof"') : '';
-  return { eyebrow: `${open} tasks to do`, title: 'Plan', act, fab: UI.plan === 'tasks' ? ['addtask', 'Task'] : null, html: segbar('plan', [['tasks', 'Tasks'], ['dayof', 'Day of'], ['questions', 'Decisions'], ['lists', 'Lists']]) + body };
+  if (UI.plan === 'lists') body = segbar('planList', [['photos', 'Photo Shots'], ['music', 'Music'], ['risks', 'Risks']], true) + body;
+  const act = UI.plan === 'tasks' ? hdrBtn('share', I.share, 'Share or Print Tasks', 'data-kind="tasks"') : UI.plan === 'dayof' ? hdrBtn('share', I.share, 'Share or Print the Schedule', 'data-kind="dayof"') : '';
+  return { eyebrow: `${open} tasks to do`, title: 'Plan', act, fab: UI.plan === 'tasks' ? ['addtask', 'Task'] : null, tabs: segbar('plan', [['tasks', 'Tasks'], ['dayof', 'Day Of'], ['questions', 'Decisions'], ['lists', 'Lists']]), html: body };
 }
 
 /* ---------- GUESTS ---------- */
+const GMAP = { All: () => true, Accepted: p => p.RSVP === 'Accepted', Awaiting: p => p.RSVP === 'Invited', Declined: p => p.RSVP === 'Declined', Waitlist: p => p.RSVP === 'Waitlist', 'Wedding Party': p => p['Group Role'] === 'Wedding Party' };
+function guestTools() { const F = UI.gFilter, map = GMAP; return `<div class="searchrow"><label class="search">${I.search}<input id="q" type="search" placeholder="Search guest" value="${esc(UI.q)}" autocomplete="off"></label>
+    <select class="sel filtersel" id="gfilter" aria-label="Show">${Object.keys(map).map(k => `<option value="${k}" ${F === k ? 'selected' : ''}>${k === 'All' ? 'Everyone' : k} (${S.people.filter(map[k]).length})</option>`).join('')}</select></div>`; }
 function renderGuests() {
   const s = stats(); let body = '';
   if (UI.guests === 'list') {
     const F = UI.gFilter, q = UI.q.toLowerCase();
-    const map = { All: () => true, Accepted: p => p.RSVP === 'Accepted', Awaiting: p => p.RSVP === 'Invited', Declined: p => p.RSVP === 'Declined', Waitlist: p => p.RSVP === 'Waitlist', 'Wedding party': p => p['Group Role'] === 'Wedding Party' };
+    if (!GMAP[UI.gFilter]) UI.gFilter = 'All'; const map = GMAP;
     const list = S.people.map((p, i) => [p, i]).filter(([p]) => map[F](p) && (!q || [p.Name, p.Relationship, p['Individual Role'], p.Phone, p.Email, p.Address].join(' ').toLowerCase().includes(q)));
     const pill = r => r === 'Accepted' ? 'pill done' : r === 'Declined' ? 'pill red' : r === 'Waitlist' ? 'pill soft' : 'pill rose';
-    body = `<div class="searchrow"><label class="search">${I.search}<input id="q" type="search" placeholder="Search guests" value="${esc(UI.q)}" autocomplete="off"></label>
-    <select class="sel filtersel" id="gfilter" aria-label="Show">${Object.keys(map).map(k => `<option value="${k}" ${F === k ? 'selected' : ''}>${k === 'All' ? 'Everyone' : k} (${S.people.filter(map[k]).length})</option>`).join('')}</select></div>
+    body = `
     ${s.inv ? `<section class="rsvpbar"><div class="hd"><b>${s.inv} still to reply</b><span class="note">${S.people.filter(p => p.RSVP === 'Invited' && p.rsvpAsked).length} asked so far</span></div><div class="acts"><button class="btn plum" data-act="rsvp" data-mode="sms">${I.sms} Text</button><button class="btn plum" data-act="rsvp" data-mode="email">${I.mail} Email</button><button class="btn alt" data-act="replies">${I.check} Replies</button></div></section>` : ''}
     <section class="card flush"><div class="sh"><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3><button class="more" data-act="select">${UI.selecting ? 'Done' : 'Select'}</button></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
   } else if (UI.guests === 'seating') {
     const att = S.people.filter(p => !['Declined', 'Waitlist'].includes(p.RSVP));
     const tables = [...new Set(att.map(p => p.Table).filter(Boolean))].sort((a, b) => a - b);
     const meals = {}; att.forEach(p => { if (p['Meal Choice']) meals[p['Meal Choice']] = (meals[p['Meal Choice']] || 0) + 1; });
-    body = `<section class="card"><div class="sh"><h3>Meal counts</h3><span class="note">${att.length} invited or attending</span></div><div class="bars">${Object.entries(meals).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<div class="bar3"><div class="top3"><span>${esc(m)}</span><span>${n}</span></div><div class="track"><i style="width:${n / att.length * 100}%;background:var(--mauve)"></i></div></div>`).join('')}</div></section>
+    body = `<section class="card"><div class="sh"><h3>Meal Counts</h3><span class="note">${att.length} invited or attending</span></div><div class="bars">${Object.entries(meals).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<div class="bar3"><div class="top3"><span>${esc(m)}</span><span>${n}</span></div><div class="track"><i style="width:${n / att.length * 100}%;background:var(--mauve)"></i></div></div>`).join('')}</div></section>
     <div class="table-card">${tables.map(t => { const g = att.filter(p => p.Table == t); const seats = g.length > 10 ? 12 : 10; const diet = g.filter(p => p['Dietary Restrictions'] && p['Dietary Restrictions'] !== 'None').length; return `<div class="tcard"><div class="h"><b>Table ${t}</b><span class="note">${g.length}/${seats}</span></div><div class="seats">${Array.from({ length: seats }, (_, k) => `<i class="${k < g.length ? 'f' : ''}"></i>`).join('')}</div><div class="ml">${diet ? `<span class="pill warn">${diet} dietary</span>` : '<span class="pill soft">No dietary needs</span>'}</div><div class="ml">${g.slice(0, 3).map(p => esc(p.Name.split(' ')[0])).join(', ')}${g.length > 3 ? ` +${g.length - 3}` : ''}</div></div>`; }).join('')}</div>`;
   } else {
-    body = `<section class="card flush"><div class="sh"><h3>Hotel rooms</h3><span class="note">${S.lodging.filter(l => l.Status === 'Confirmed').length}/${S.lodging.length} confirmed</span></div>${S.lodging.map(l => `<div class="row"><div class="main"><div class="t">${esc(l.Guest)}</div><div class="m">${esc(l.Hotel)}${l.Confirmation ? ' · #' + esc(l.Confirmation) : ''}</div></div><span class="pill ${l.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(l.Status)}</span></div>`).join('')}</section>
+    body = `<section class="card flush"><div class="sh"><h3>Hotel Rooms</h3><span class="note">${S.lodging.filter(l => l.Status === 'Confirmed').length}/${S.lodging.length} confirmed</span></div>${S.lodging.map(l => `<div class="row"><div class="main"><div class="t">${esc(l.Guest)}</div><div class="m">${esc(l.Hotel)}${l.Confirmation ? ' · #' + esc(l.Confirmation) : ''}</div></div><span class="pill ${l.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(l.Status)}</span></div>`).join('')}</section>
     <section class="card flush"><div class="sh"><h3>Rides</h3><span class="note">${S.rides.filter(l => l.Status === 'Confirmed').length}/${S.rides.length} confirmed</span></div>${S.rides.map(r => `<div class="row"><div class="date" style="width:58px"><b style="font-size:14px">${time12(r.Time).replace(' ', '')}</b></div><div class="main"><div class="t" style="white-space:normal">${esc(r.Service)}</div><div class="m">${esc(r.Vendor)}</div></div><span class="pill ${r.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(r.Status)}</span></div>`).join('')}</section>`;
   }
-  return { eyebrow: `${s.acc} accepted · ${s.inv} awaiting`, title: 'Guests', act: UI.guests === 'list' ? hdrBtn('share', I.share, 'Share or print the guest list', 'data-kind="guests"') : '', fab: UI.guests === 'list' ? ['addguest', 'Guest'] : null, html: segbar('guests', [['list', 'Guest list'], ['seating', 'Seating'], ['stay', 'Hotels & rides']]) + body };
+  return { eyebrow: `${s.acc} accepted · ${s.inv} awaiting`, title: 'Guests', act: UI.guests === 'list' ? hdrBtn('share', I.share, 'Share or Print the Guest List', 'data-kind="guests"') : '', fab: UI.guests === 'list' ? ['addguest', 'Guest'] : null, tabs: segbar('guests', [['list', 'Guest List'], ['seating', 'Seating'], ['stay', 'Hotels & Rides']]), tools: UI.guests === 'list' ? guestTools() : '', html: body };
 }
 
 /* ---------- MONEY ---------- */
@@ -777,16 +821,16 @@ function renderMoney() {
   if (UI.money === 'budget') {
     const g = {}; S.budget.forEach(b => { const k = groupOf(b.Category); g[k] = g[k] || { b: 0, a: 0, p: 0, lines: [] }; g[k].b += +b.Budget || 0; g[k].a += +b.Actual || 0; g[k].p += paidFor(b.Category, b.Vendor); g[k].lines.push(b); });
     const max = Math.max(...Object.values(g).map(x => Math.max(x.b, x.a)));
-    body = sum + `<section class="card"><div class="sh"><h3>By spending group</h3></div><div class="bars">${Object.entries(g).sort((a, b) => b[1].b - a[1].b).map(([k, x]) => `<div class="bar3"><div class="top3"><span>${esc(k)}</span><span>${money(x.a)} of ${money(x.b)}</span></div><div class="track"><i style="width:${x.b / max * 100}%;background:var(--blush)"></i><i style="width:${x.a / max * 100}%;background:var(--rose)"></i><i style="width:${x.p / max * 100}%;background:var(--deep)"></i></div></div>`).join('')}</div>
+    body = sum + `<section class="card"><div class="sh"><h3>By Spending Group</h3></div><div class="bars">${Object.entries(g).sort((a, b) => b[1].b - a[1].b).map(([k, x]) => `<div class="bar3"><div class="top3"><span>${esc(k)}</span><span>${money(x.a)} of ${money(x.b)}</span></div><div class="track"><i style="width:${x.b / max * 100}%;background:var(--blush)"></i><i style="width:${x.a / max * 100}%;background:var(--rose)"></i><i style="width:${x.p / max * 100}%;background:var(--deep)"></i></div></div>`).join('')}</div>
     <div class="legend" style="grid-template-columns:repeat(3,auto);justify-content:start;gap:14px"><div><i style="background:var(--deep)"></i>Paid</div><div><i style="background:var(--rose)"></i>Booked</div><div><i style="background:var(--blush)"></i>Budget</div></div></section>
-    <section class="card flush"><div class="sh"><h3>Budget lines</h3></div>${S.budget.map(b => { const paid = paidFor(b.Category, b.Vendor), bal = (+b.Actual || 0) - paid; const st = (+b.Actual > 0 && paid >= +b.Actual) ? ['Paid', 'done'] : paid > 0 ? ['Partial', ''] : +b.Actual > 0 ? ['Not paid', 'rose'] : ['Planned', 'soft']; return `<div class="row"><div class="main"><div class="t">${esc(b.Category)}</div><div class="m">${esc(b.Vendor || 'No vendor yet')}</div></div><div class="end"><div class="amt">${money(b.Actual || b.Budget)}</div><div class="m">${bal > 0 ? money(bal) + ' due' : ''}</div></div><span class="pill ${st[1]}">${st[0]}</span></div>`; }).join('')}</section>`;
+    <section class="card flush"><div class="sh"><h3>Budget Lines</h3></div>${S.budget.map(b => { const paid = paidFor(b.Category, b.Vendor), bal = (+b.Actual || 0) - paid; const st = (+b.Actual > 0 && paid >= +b.Actual) ? ['Paid', 'done'] : paid > 0 ? ['Partial', ''] : +b.Actual > 0 ? ['Not Paid', 'rose'] : ['Planned', 'soft']; return `<div class="row"><div class="main"><div class="t">${esc(b.Category)}</div><div class="m">${esc(b.Vendor || 'No vendor yet')}</div></div><div class="end"><div class="amt">${money(b.Actual || b.Budget)}</div><div class="m">${bal > 0 ? money(bal) + ' due' : ''}</div></div><span class="pill ${st[1]}">${st[0]}</span></div>`; }).join('')}</section>`;
   } else {
     const up = S.payments.map((p, i) => [p, i]).filter(([p]) => p.Status !== 'Paid').sort((a, b) => (a[0]['Due Date'] || '9').localeCompare(b[0]['Due Date'] || '9'));
     const done = S.payments.map((p, i) => [p, i]).filter(([p]) => p.Status === 'Paid').sort((a, b) => (b[0]['Paid On'] || '').localeCompare(a[0]['Paid On'] || ''));
-    body = sum + `<section class="card flush"><div class="sh"><h3>Scheduled</h3><span class="note">${money(s.owed)}</span></div>${up.map(([p, i]) => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${i}" style="margin-top:4px">Mark paid</button></div></div>`).join('') || '<div class="empty">Everything is paid.</div>'}</section>
+    body = sum + `<section class="card flush"><div class="sh"><h3>Scheduled</h3><span class="note">${money(s.owed)}</span></div>${up.map(([p, i]) => `<div class="row">${dateChip(p['Due Date'])}<div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · ${esc(p.Category)}</div></div><div class="end"><div class="amt">${money(p.Amount)}</div><button class="btn sm alt" data-pay="${i}" style="margin-top:4px">Mark Paid</button></div></div>`).join('') || '<div class="empty">Everything is paid.</div>'}</section>
     <section class="card flush"><div class="sh"><h3>Paid</h3><span class="note">${money(s.paid)}</span></div>${done.map(([p]) => `<div class="row"><div class="check on">${I.check}</div><div class="main"><div class="t">${esc(p.Vendor)}</div><div class="m">${esc(p.Payment)} · paid ${fmtD(p['Paid On'] || p['Due Date'])}</div></div><div class="amt">${money(p.Amount)}</div></div>`).join('')}</section>`;
   }
-  return { eyebrow: `${Math.round(s.actual / (s.budget || 1) * 100)}% of budget booked`, title: 'Money', act: UI.money === 'payments' ? hdrBtn('share', I.share, 'Share or print payments', 'data-kind="payments"') : '', fab: ['addpay', 'Payment'], html: segbar('money', [['budget', 'Budget'], ['payments', 'Payments']]) + body };
+  return { eyebrow: `${Math.round(s.actual / (s.budget || 1) * 100)}% of budget booked`, title: 'Money', act: UI.money === 'payments' ? hdrBtn('share', I.share, 'Share or Print Payments', 'data-kind="payments"') : '', fab: ['addpay', 'Payment'], tabs: segbar('money', [['budget', 'Budget'], ['payments', 'Payments']]), html: body };
 }
 
 /* ---------- VENDORS ---------- */
@@ -805,7 +849,7 @@ function renderVendors() {
   } else {
     body = `<section class="card flush">${S.equipment.map(e => { const gap = (+e['Qty Needed'] || 0) - (+e['Qty Confirmed'] || 0); return `<div class="row"><div class="main"><div class="t">${esc(e.Item)}</div><div class="m">${esc(e['Vendor / Source'])} · ${esc(e.Category)}</div></div><div class="end"><div class="amt num">${e['Qty Confirmed'] || 0}/${e['Qty Needed'] || 0}</div>${gap > 0 ? `<span class="pill warn">${gap} short</span>` : `<span class="pill">${esc(e.Status)}</span>`}</div></div>`; }).join('')}</section>`;
   }
-  return { eyebrow: `${s.booked} booked`, title: 'Vendors', fab: UI.vend === 'vendors' ? ['addvendor', 'Vendor'] : null, html: segbar('vend', [['vendors', 'Vendors'], ['places', 'Places'], ['rentals', 'Rentals']]) + body };
+  return { eyebrow: `${s.booked} booked`, title: 'Vendors', fab: UI.vend === 'vendors' ? ['addvendor', 'Vendor'] : null, tabs: segbar('vend', [['vendors', 'Vendors'], ['places', 'Places'], ['rentals', 'Rentals']]), html: body };
 }
 
 /* ---------- sheets ---------- */
@@ -870,7 +914,7 @@ function actbar(key) {
 }
 function infoRows(key) {
   const c = contactOf(key); const r = (lab, val, act, ph) => `<div><span>${lab}</span>${val ? `<button class="link" data-ca="${act}" data-ck="${key}">${esc(val)}</button>` : `<button class="link add" data-ca="edit" data-ck="${key}">${ph}</button>`}</div>`;
-  return `<div class="kv">${c.person ? `<div><span>Contact</span><b>${esc(c.person)}</b></div>` : ''}${r('Phone', c.phone, 'call', 'Add phone')}${r('Email', c.email, 'email', 'Add email')}${r('Address', c.address, 'map', 'Add address')}</div>`;
+  return `<div class="kv">${c.person ? `<div><span>Contact</span><b>${esc(c.person)}</b></div>` : ''}${r('Phone', c.phone, 'call', 'Add Phone')}${r('Email', c.email, 'email', 'Add Email')}${r('Address', c.address, 'map', 'Add Address')}</div>`;
 }
 function editContact(key) {
   const [k, id] = String(key).split(':');
@@ -896,7 +940,7 @@ function mapSheet(name, addr) {
   const ext = 'target="_blank" rel="noopener"';
   sheet(`<div class="callico">${I.pin}</div><h4 style="text-align:center">${esc(name)}</h4><div class="addrbig">${esc(addr)}</div>
   <a class="btn" href="${dirHref(addr)}" ${ext}>${I.nav} Directions</a>
-  <div class="btnrow"><a class="btn alt" href="${mapHref(addr)}" ${ext}>${I.pin} ${IOS ? 'Apple Maps' : 'Open map'}</a><a class="btn alt" href="${gmapHref(addr)}" ${ext}>${I.pin} Google Maps</a></div>
+  <div class="btnrow"><a class="btn alt" href="${mapHref(addr)}" ${ext}>${I.pin} ${IOS ? 'Apple Maps' : 'Open Map'}</a><a class="btn alt" href="${gmapHref(addr)}" ${ext}>${I.pin} Google Maps</a></div>
   <button class="btn alt sm" data-copy="${esc(addr)}" data-label="Address">${I.copy} Copy address</button>
   <div class="note" style="text-align:center">Directions opens your phone's maps app.</div>`);
 }
@@ -906,13 +950,13 @@ const TPL = {
   guest: [
     ['rsvp', 'RSVP request', 'Will you celebrate with us?', 'Hi {first}! {names} would love to celebrate with you on {date} at {venue}. Can you let us know {rsvpby} if you can make it? {rsvpline}'],
     ['remind', 'RSVP reminder', 'Quick RSVP reminder', 'Hi {first}, just a friendly reminder to RSVP for our wedding on {date}. We need final numbers {rsvpby}. {rsvpline} Thank you!'],
-    ['details', 'Wedding details', 'Wedding day details', 'Hi {first}! We can\'t wait to see you. Here are the details:\n{date} at {time}\n{venue}\n{address}\nDirections: {map}'],
+    ['details', 'Wedding Details', 'Wedding Day Details', 'Hi {first}! We can\'t wait to see you. Here are the details:\n{date} at {time}\n{venue}\n{address}\nDirections: {map}'],
     ['thanks', 'Thank you', 'Thank you!', 'Dear {first},\n\nThank you so much for celebrating with us and for your thoughtful gift. It means the world to us.\n\nWith love,\n{names}'],
     ['note', 'Blank', 'A note from {names}', 'Hi {first}, '],
   ],
   vendor: [
     ['checkin', 'Check in', 'Checking in: {names} wedding, {dateshort}', 'Hi {first}, this is {names}. Just checking in about our wedding on {date} at {venue}. Is there anything you need from us right now?\n\nThank you!\n{names}'],
-    ['confirm', 'Confirm details', 'Confirming details for {dateshort}', 'Hi {first}, we\'d love to confirm the plan for {date}: your arrival and setup time, anything you need on site, and who to call on the day.\n\nVenue: {venue}, {address}\n\nThanks so much,\n{names}'],
+    ['confirm', 'Confirm Details', 'Confirming details for {dateshort}', 'Hi {first}, we\'d love to confirm the plan for {date}: your arrival and setup time, anything you need on site, and who to call on the day.\n\nVenue: {venue}, {address}\n\nThanks so much,\n{names}'],
     ['pay', 'Payment question', 'Payment question: {names} wedding', 'Hi {first}, could you confirm our remaining balance and when the next payment is due? Our wedding is on {date}.\n\nThank you,\n{names}'],
     ['note', 'Blank', 'Our wedding on {dateshort}', 'Hi {first}, '],
   ],
@@ -964,7 +1008,7 @@ function drawCompose(keepScroll) {
     <div class="sect">Send one by one · <span id="cmp-count">${CMP.sent.size}</span> of ${list.length} sent</div>
     <div class="queue">${list.map(c => `<a class="qrow ${CMP.sent.has(c.key) ? 'sent' : ''}" data-sendk="${c.key}" href="${esc(cmpHref(c))}"><div class="avatar">${initials(c.name)}</div><div class="main"><div class="t">${esc(c.name)}</div><div class="m">${esc(CMP.mode === 'sms' ? c.phone : c.email)}</div></div><span class="qgo">${CMP.sent.has(c.key) ? I.check + ' Sent' : (CMP.mode === 'sms' ? 'Text' : 'Email')}</span></a>`).join('')}</div>`}
   ${missing ? `<div class="note">${missing} ${missing === 1 ? 'person has' : 'people have'} no ${need === 'phone' ? 'mobile number' : 'email'} saved, so ${missing === 1 ? 'they are' : 'they\'re'} left out.</div>` : ''}
-  ${CMP.rsvp ? `<div class="proto">${I.heart}<span>Replies come back to your phone. When someone answers, tap <b>Record replies</b> on the Guests tab to mark them in one tap.</span></div>` : ''}
+  ${CMP.rsvp ? `<div class="proto">${I.heart}<span>Replies come back to your phone. When someone answers, tap <b>Record Replies</b> on the Guests tab to mark them in one tap.</span></div>` : ''}
   <button class="btn alt" data-close="1">Done</button>`);
   if (keepScroll) layer.querySelector('.sheet').scrollTop = sc;
   const upd = () => { const b = document.getElementById('cmp-body'), s = document.getElementById('cmp-subj'); CMP.body = b.value; if (s) CMP.subj = s.value;
@@ -990,7 +1034,7 @@ function rsvpAsk(mode, ids) {
 }
 function repliesSheet() {
   const ids = awaiting(), meals = String(S.details.meals || '').split(',').map(x => x.trim()).filter(Boolean), mealOpts = meals.length ? meals : DATA.lists['Meal Choice'];
-  sheet(`<h4>Record replies</h4><div class="lead">${ids.length ? 'When a guest answers your text or email, tap their reply here. Counts and the Home dashboard update right away.' : 'Everyone has replied.'}</div>
+  sheet(`<h4>Record Replies</h4><div class="lead">${ids.length ? 'When a guest answers your text or email, tap their reply here. Counts and the Home dashboard update right away.' : 'Everyone has replied.'}</div>
   <div class="replies">${ids.map(i => { const p = S.people[i]; return `<div class="rrow" id="rr${i}"><div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${p.rsvpAsked ? 'Asked ' + fmtD(p.rsvpAsked) : 'Not asked yet'}</div></div>
     <select class="sel" id="rm${i}" aria-label="Meal for ${esc(p.Name)}"><option value="">Meal</option>${mealOpts.map(m => `<option ${p['Meal Choice'] === m ? 'selected' : ''}>${esc(m)}</option>`).join('')}</select>
     <div class="yn"><button class="btn sm plum" data-rr="${i}" data-r="Accepted" aria-label="${esc(p.Name)} accepted">Yes</button><button class="btn sm alt" data-rr="${i}" data-r="Declined" aria-label="${esc(p.Name)} declined">No</button></div></div>`; }).join('')}</div>
@@ -1013,11 +1057,11 @@ function guestSheet(i) {
     <div><span>RSVP</span>${sel('RSVP', ['Invited', 'Accepted', 'Declined', 'Waitlist'])}</div>
     ${p.RSVP === 'Invited' ? `<div><span>RSVP asked</span><b>${p.rsvpAsked ? fmtD(p.rsvpAsked) : 'Not yet'}</b></div>` : ''}
     <div><span>Meal</span>${sel('Meal Choice', ['', ...DATA.lists['Meal Choice']])}</div>
-    <div><span>Dietary needs</span>${sel('Dietary Restrictions', ['', ...DATA.lists['Dietary Restrictions']])}</div>
+    <div><span>Dietary Needs</span>${sel('Dietary Restrictions', ['', ...DATA.lists['Dietary Restrictions']])}</div>
     <div><span>Table</span>${sel('Table', ['', ...Array.from({ length: 20 }, (_, k) => String(k + 1))])}</div>
-    <div><span>Hotel needed</span>${sel('Hotel Needed', ['', ...DATA.lists['Hotel Needed']])}</div>
-    <div><span>Gift received</span>${sel('Gift Received', ['No', 'Yes', 'Pending'])}</div>
-    <div><span>Thank-you sent</span>${sel('Thank You Sent', ['No', 'Yes'])}</div>
+    <div><span>Hotel Needed</span>${sel('Hotel Needed', ['', ...DATA.lists['Hotel Needed']])}</div>
+    <div><span>Gift Received</span>${sel('Gift Received', ['No', 'Yes', 'Pending'])}</div>
+    <div><span>Thank-You Sent</span>${sel('Thank You Sent', ['No', 'Yes'])}</div>
   </div>
   <button class="btn alt" data-close="1">Done</button>`);
 }
@@ -1025,15 +1069,15 @@ const fld = (id, label, val, type = 'text', extra = '') => `<div class="field"><
 const fsel = (id, label, list, cur) => `<div class="field"><label for="${id}">${label}</label><select id="${id}">${opt(list, cur)}</select></div>`;
 function guestForm(i) {
   const isNew = i == null, p = isNew ? { Side: 'Bride', Relationship: 'Friend', 'Individual Role': 'Guest' } : S.people[i];
-  sheet(`<h4>${isNew ? 'Add a guest' : 'Edit ' + esc(p.Name)}</h4>
-  ${fld('gf-name', 'Full name', p.Name, 'text', 'autocomplete="off" placeholder="e.g. Jordan Lee"')}
+  sheet(`<h4>${isNew ? 'Add a Guest' : 'Edit ' + esc(p.Name)}</h4>
+  ${fld('gf-name', 'Full Name', p.Name, 'text', 'autocomplete="off" placeholder="e.g. Jordan Lee"')}
   <div class="two">${fld('gf-phone', 'Mobile', p.Phone, 'tel', 'placeholder="555-555-0100"')}${fsel('gf-side', 'Side', DATA.lists.Side, p.Side)}</div>
   ${fld('gf-email', 'Email', p.Email, 'email', 'placeholder="name@email.com"')}
-  ${fld('gf-addr', 'Mailing address', p.Address, 'text', 'placeholder="Street, city, state, ZIP" autocomplete="off"')}
+  ${fld('gf-addr', 'Mailing Address', p.Address, 'text', 'placeholder="Street, city, state, ZIP" autocomplete="off"')}
   <div class="two">${fsel('gf-rel', 'Relationship', DATA.lists.Relationship, p.Relationship)}${fsel('gf-role', 'Role', DATA.lists['Individual Role'], p['Individual Role'] || 'Guest')}</div>
   ${isNew ? '<div class="note">New guests start as Awaiting reply, so they\'re included the next time you send RSVP requests.</div>' : ''}
-  <button class="btn plum" data-act="saveguest" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add guest' : 'Save changes'}</button>
-  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-guest="${i}">Cancel</button><button class="btn alt danger" data-act="delguest" data-i="${i}">${I.trash} Remove guest</button></div>`}`);
+  <button class="btn plum" data-act="saveguest" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add guest' : 'Save Changes'}</button>
+  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-guest="${i}">Cancel</button><button class="btn alt danger" data-act="delguest" data-i="${i}">${I.trash} Remove Guest</button></div>`}`);
   if (isNew) document.getElementById('gf-name').focus();
 }
 function saveGuest(i) {
@@ -1050,29 +1094,29 @@ function vendorSheet(i) {
   const v = S.vendors[i], key = 'v:' + i, paid = paidVendor(v.Company), pays = S.payments.filter(p => p.Vendor === v.Company);
   sheet(`<div style="display:flex;gap:12px;align-items:center"><div class="avatar" style="width:52px;height:52px;font-size:20px">${initials(v.Company)}</div><div style="min-width:0;flex:1"><div class="note">${esc(v['Vendor Type'])}</div><h4>${esc(v.Company)}</h4></div><button class="iconbtn" data-ca="edit" data-ck="${key}" aria-label="Edit ${esc(v.Company)}">${I.edit}</button></div>
   ${actbar(key)}${infoRows(key)}
-  <div class="kv"><div><span>Website</span>${v.Website ? `<a href="${esc(webUrl(v.Website))}" target="_blank" rel="noopener">${esc(webLabel(v.Website))}</a>` : `<button class="link add" data-ca="edit" data-ck="${key}">Add website</button>`}</div>
-  ${v.Login || v.Password ? `<div><span>Username</span><b class="cred">${esc(v.Login || '–')}${v.Login ? `<button class="mini" data-copy="${esc(v.Login)}" data-label="Username" aria-label="Copy username">${I.copy}</button>` : ''}</b></div>
-  <div><span>Password</span><b class="cred"><span id="pw${i}" data-pw="${esc(v.Password || '')}">${v.Password ? '••••••••' : '–'}</span>${v.Password ? `<button class="mini" data-act="pwshow" data-i="${i}" aria-label="Show password">${I.eye}</button><button class="mini" data-copy="${esc(v.Password)}" data-label="Password" aria-label="Copy password">${I.copy}</button>` : ''}</b></div>` : `<div><span>Portal login</span><button class="link add" data-ca="edit" data-ck="${key}">Add login</button></div>`}</div>
-  <div class="kv"><div><span>Status</span><select class="sel" data-vs="${i}" aria-label="Vendor status">${DATA.lists['Vendor Status'].map(o => `<option ${v['Vendor Status'] === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div><div><span>Contract signed</span><b>${esc(v['Contract Signed'] || 'No')}</b></div><div><span>Quoted</span><b class="num">${money(v['Quoted Cost'])}</b></div><div><span>Paid to date</span><b class="num">${money(paid)}</b></div><div><span>Balance due</span><b class="num" style="color:var(--deep)">${money(Math.max(0, (+v['Quoted Cost'] || 0) - paid))}</b></div></div>
+  <div class="kv"><div><span>Website</span>${v.Website ? `<a href="${esc(webUrl(v.Website))}" target="_blank" rel="noopener">${esc(webLabel(v.Website))}</a>` : `<button class="link add" data-ca="edit" data-ck="${key}">Add Website</button>`}</div>
+  ${v.Login || v.Password ? `<div><span>Username</span><b class="cred">${esc(v.Login || '–')}${v.Login ? `<button class="mini" data-copy="${esc(v.Login)}" data-label="Username" aria-label="Copy Username">${I.copy}</button>` : ''}</b></div>
+  <div><span>Password</span><b class="cred"><span id="pw${i}" data-pw="${esc(v.Password || '')}">${v.Password ? '••••••••' : '–'}</span>${v.Password ? `<button class="mini" data-act="pwshow" data-i="${i}" aria-label="Show Password">${I.eye}</button><button class="mini" data-copy="${esc(v.Password)}" data-label="Password" aria-label="Copy Password">${I.copy}</button>` : ''}</b></div>` : `<div><span>Portal Login</span><button class="link add" data-ca="edit" data-ck="${key}">Add Login</button></div>`}</div>
+  <div class="kv"><div><span>Status</span><select class="sel" data-vs="${i}" aria-label="Vendor Status">${DATA.lists['Vendor Status'].map(o => `<option ${v['Vendor Status'] === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div><div><span>Contract Signed</span><b>${esc(v['Contract Signed'] || 'No')}</b></div><div><span>Quoted</span><b class="num">${money(v['Quoted Cost'])}</b></div><div><span>Paid to Date</span><b class="num">${money(paid)}</b></div><div><span>Balance Due</span><b class="num" style="color:var(--deep)">${money(Math.max(0, (+v['Quoted Cost'] || 0) - paid))}</b></div></div>
   <div class="sect">Payments</div>
   ${pays.length ? `<div class="kv">${pays.map(p => `<div><span>${esc(p.Payment)} · ${fmtD(p['Due Date'])}</span><b class="num">${money(p.Amount)} ${p.Status === 'Paid' ? '<span class="pill done">Paid</span>' : '<span class="pill rose">Scheduled</span>'}</b></div>`).join('')}</div>` : '<div class="note" style="margin-top:-6px">No payments scheduled yet.</div>'}
-  <div class="btnrow"><button class="btn alt" data-act="addpay" data-vendor-name="${esc(v.Company)}">${I.plus} Add payment</button><button class="btn alt" data-close="1">Done</button></div>`);
+  <div class="btnrow"><button class="btn alt" data-act="addpay" data-vendor-name="${esc(v.Company)}">${I.plus} Add Payment</button><button class="btn alt" data-close="1">Done</button></div>`);
 }
 function vendorForm(i) {
   const isNew = i == null, v = isNew ? { 'Vendor Type': 'Other', 'Vendor Status': 'Prospect' } : S.vendors[i];
-  sheet(`<h4>${isNew ? 'Add a vendor' : 'Edit ' + esc(v.Company)}</h4>
-  ${fld('vf-co', 'Business name', v.Company, 'text', 'autocomplete="off" placeholder="e.g. Petal & Stem Florals"')}
+  sheet(`<h4>${isNew ? 'Add a Vendor' : 'Edit ' + esc(v.Company)}</h4>
+  ${fld('vf-co', 'Business Name', v.Company, 'text', 'autocomplete="off" placeholder="e.g. Petal & Stem Florals"')}
   <div class="two">${fsel('vf-type', 'Type', DATA.lists['Vendor Type'], v['Vendor Type'])}${fsel('vf-st', 'Status', DATA.lists['Vendor Status'], v['Vendor Status'])}</div>
-  ${fld('vf-contact', 'Contact person', v.Contact, 'text', 'autocomplete="off"')}
-  <div class="two">${fld('vf-phone', 'Phone', v.Phone, 'tel')}${fld('vf-cost', 'Quoted cost', v['Quoted Cost'], 'number', 'min="0" inputmode="decimal"')}</div>
+  ${fld('vf-contact', 'Contact Person', v.Contact, 'text', 'autocomplete="off"')}
+  <div class="two">${fld('vf-phone', 'Phone', v.Phone, 'tel')}${fld('vf-cost', 'Quoted Cost', v['Quoted Cost'], 'number', 'min="0" inputmode="decimal"')}</div>
   ${fld('vf-email', 'Email', v.Email, 'email')}
   ${fld('vf-addr', 'Address', v.Address, 'text', 'placeholder="Street, city, state, ZIP" autocomplete="off"')}
   ${fld('vf-web', 'Website', v.Website, 'url', 'placeholder="www.example.com" autocomplete="off" autocapitalize="off"')}
   <div class="sect">Client portal login (optional)</div>
-  <div class="two">${fld('vf-login', 'Username or email', v.Login, 'text', 'autocomplete="off" autocapitalize="off" spellcheck="false"')}<div class="field"><label for="vf-pw">Password</label><div class="pwwrap"><input id="vf-pw" type="password" value="${esc(v.Password ?? '')}" autocomplete="new-password" autocapitalize="off" spellcheck="false"><button type="button" class="mini" data-act="pwtoggle" aria-label="Show password">${I.eye}</button></div></div></div>
+  <div class="two">${fld('vf-login', 'Username or Email', v.Login, 'text', 'autocomplete="off" autocapitalize="off" spellcheck="false"')}<div class="field"><label for="vf-pw">Password</label><div class="pwwrap"><input id="vf-pw" type="password" value="${esc(v.Password ?? '')}" autocomplete="new-password" autocapitalize="off" spellcheck="false"><button type="button" class="mini" data-act="pwtoggle" aria-label="Show Password">${I.eye}</button></div></div></div>
   <div class="note" style="margin-top:-6px">Saved only on this phone and never included in Excel downloads or shared PDFs. For bank or card logins, your phone's Passwords app is the safer place.</div>
-  <button class="btn plum" data-act="savevendor" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add vendor' : 'Save changes'}</button>
-  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-vendor="${i}">Cancel</button><button class="btn alt danger" data-act="delvendor" data-i="${i}">${I.trash} Remove vendor</button></div>`}`);
+  <button class="btn plum" data-act="savevendor" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add vendor' : 'Save Changes'}</button>
+  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-vendor="${i}">Cancel</button><button class="btn alt danger" data-act="delvendor" data-i="${i}">${I.trash} Remove Vendor</button></div>`}`);
   if (isNew) document.getElementById('vf-co').focus();
 }
 function saveVendor(i) {
@@ -1093,13 +1137,13 @@ const opt = (list, cur) => list.map(o => `<option ${String(o) === String(cur ?? 
 function taskForm(i) {
   const isNew = i == null, t = isNew ? { 'Due Date': isoPlus(14), Owner: 'Couple', Priority: 'Medium', Category: 'Other' } : S.tasks[i];
   const owners = OWNERS.includes(t.Owner) || !t.Owner ? OWNERS : [...OWNERS, t.Owner], cats = DATA.lists['Task Category'].includes(t.Category) || !t.Category ? DATA.lists['Task Category'] : [...DATA.lists['Task Category'], t.Category];
-  sheet(`<h4>${isNew ? 'Add a task' : 'Edit task'}</h4>
+  sheet(`<h4>${isNew ? 'Add a Task' : 'Edit Task'}</h4>
   <div class="field"><label for="nt-task">What needs to happen?</label><input id="nt-task" value="${esc(t.Task)}" placeholder="e.g. Book a hair trial" autocomplete="off"></div>
-  <div class="two">${fld('nt-due', 'Due date', t['Due Date'], 'date')}${fsel('nt-owner', 'Who', owners, t.Owner)}</div>
+  <div class="two">${fld('nt-due', 'Due Date', t['Due Date'], 'date')}${fsel('nt-owner', 'Who', owners, t.Owner)}</div>
   <div class="two">${fsel('nt-pri', 'Priority', DATA.lists.Priority, t.Priority)}${fsel('nt-cat', 'Category', cats, t.Category)}</div>
   <div class="field"><label for="nt-notes">Notes</label><textarea id="nt-notes" rows="2" placeholder="Optional">${esc(t.Notes)}</textarea></div>
-  <button class="btn plum" data-act="savetask" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add task' : 'Save changes'}</button>
-  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-close="1">Cancel</button><button class="btn alt danger" data-act="deltask" data-i="${i}">${I.trash} Delete task</button></div>`}`);
+  <button class="btn plum" data-act="savetask" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add task' : 'Save Changes'}</button>
+  ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-close="1">Cancel</button><button class="btn alt danger" data-act="deltask" data-i="${i}">${I.trash} Delete Task</button></div>`}`);
   if (isNew) document.getElementById('nt-task').focus();
 }
 function saveTask(i) {
@@ -1113,12 +1157,12 @@ function delTask(i) { const t = S.tasks[i]; S.tasks.splice(i, 1); save(); closeS
 function payForm(vendorName) {
   const names = [...new Set([...S.vendors.map(v => v.Company), ...S.budget.map(b => b.Vendor)].filter(Boolean))].sort();
   const guessCat = n => (S.budget.find(b => b.Vendor === n) || {}).Category || '';
-  sheet(`<h4>Add a payment</h4>
+  sheet(`<h4>Add a Payment</h4>
   ${fsel('pf-ven', 'Vendor', names.length ? names : ['Other'], vendorName || names[0])}
   <div class="two">${fld('pf-what', 'What for', 'Deposit', 'text', 'placeholder="Deposit, final balance…"')}${fld('pf-amt', 'Amount', '', 'number', 'min="0" inputmode="decimal" placeholder="0"')}</div>
-  <div class="two">${fld('pf-due', 'Due date', isoPlus(30), 'date')}${fsel('pf-cat', 'Budget line', ['', ...DATA.lists['Budget Category']], guessCat(vendorName || names[0]))}</div>
-  <label class="autorow" style="background:var(--surface);border-radius:12px"><span class="tx"><b>Already paid</b><span class="note">Turn on if this money has gone out.</span></span><input type="checkbox" id="pf-paid" class="tick"></label>
-  <button class="btn plum" data-act="savepay">${I.plus} Add payment</button><button class="btn alt" data-close="1">Cancel</button>`);
+  <div class="two">${fld('pf-due', 'Due Date', isoPlus(30), 'date')}${fsel('pf-cat', 'Budget Line', ['', ...DATA.lists['Budget Category']], guessCat(vendorName || names[0]))}</div>
+  <label class="autorow" style="background:var(--surface);border-radius:12px"><span class="tx"><b>Already Paid</b><span class="note">Turn on if this money has gone out.</span></span><input type="checkbox" id="pf-paid" class="tick"></label>
+  <button class="btn plum" data-act="savepay">${I.plus} Add Payment</button><button class="btn alt" data-close="1">Cancel</button>`);
   document.getElementById('pf-ven').addEventListener('change', e => { document.getElementById('pf-cat').value = guessCat(e.target.value); });
 }
 function savePay() {
@@ -1130,7 +1174,7 @@ function savePay() {
 }
 
 /* ---------- Info Center ---------- */
-const CHAPTERS = [{"label": "Welcome", "t": 0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.8}, {"label": "Plan", "t": 76.6}, {"label": "Decisions", "t": 115.0}, {"label": "Wedding Day", "t": 142.4}, {"label": "Guests", "t": 162.2}, {"label": "RSVPs", "t": 209.6}, {"label": "Money", "t": 244.3}, {"label": "Vendors", "t": 271.2}, {"label": "Share or print", "t": 299.6}, {"label": "You’re ready", "t": 334.2}];
+const CHAPTERS = [{"label": "Welcome", "t": 0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.8}, {"label": "Plan", "t": 76.6}, {"label": "Decisions", "t": 115.0}, {"label": "Wedding Day", "t": 142.4}, {"label": "Guests", "t": 162.2}, {"label": "RSVPs", "t": 209.6}, {"label": "Money", "t": 244.3}, {"label": "Vendors", "t": 271.2}, {"label": "Share or Print", "t": 299.6}, {"label": "You’re Ready", "t": 334.2}];
 function stopVideo() { const v = document.getElementById('tourv'); if (v) v.pause(); }
 function wireVideo(play) {
   const v = document.getElementById('tourv'); if (!v) return;
@@ -1142,7 +1186,7 @@ function wireVideo(play) {
 const FAQ = [
   ['Where do I start?', 'Follow the five starter steps above, in order. Most couples spend the first week on guests and budget, then book vendors from there.'],
   ['What do the colored tiles on Home mean?', 'Each tile is a quick summary: how much of your budget is booked, how many guests accepted, how many vendors are booked, how far along your tasks are, and anything that needs attention. Tap a tile to open that area.'],
-  ['What counts as "Needs attention"?', 'Tasks past their due date, high-priority tasks due in the next 30 days, and risks marked high impact and high odds. Clear those and the tile goes to zero.'],
+  ['What counts as "Needs Attention"?', 'Tasks past their due date, high-priority tasks due in the next 30 days, and risks marked high impact and high odds. Clear those and the tile goes to zero.'],
   ['How do I mark a task done, or undo it?', 'Tap the circle next to the task. It slides into the Completed section at the bottom of Plan, crossed off. Changed your mind? Tap Undo on the message that appears, or open Completed and tap the circle again.'],
   ['Where are the add buttons?', 'The round + button at the bottom right adds whatever fits the page you are on: a task on Plan, a guest on Guests, a payment on Money, a vendor on Vendors. The share icon at the top shares or prints that page.'],
   ['What are smart steps?', 'Small automations that save you typing. For example, marking a questionnaire item Decided adds its next step to your tasks, and signing a vendor contract adds a deposit reminder. Tasks made this way show an Auto tag. You can turn each one off below.'],
@@ -1157,40 +1201,40 @@ const FAQ = [
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes the full Excel workbook and user guide, which track the same information.'],
   ['Can I bring in my Excel workbook, or get my data out?', 'Yes. In Settings, tap Import from Excel and pick your Wedding Desk workbook. You will see what was found before anything changes, and can replace or add to what is in the app. Download Excel gives you a copy of everything in the app at any time.'],
 ];
-const AUTOS = [['q', 'Questionnaire to tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto check-off', 'When you mark a thank-you as sent, its task is checked off.']];
-const NOTIFY = [['tasks', 'Task reminders', 'A nudge 3 days before a task is due.'], ['pay', 'Payment reminders', 'A heads-up a week before each vendor payment.'], ['rsvp', 'RSVP replies', 'Hear right away when a guest responds.'], ['digest', 'Weekly summary', 'A Monday recap of what\'s coming up.']];
+const AUTOS = [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
+const NOTIFY = [['tasks', 'Task Reminders', 'A nudge 3 days before a task is due.'], ['pay', 'Payment Reminders', 'A heads-up a week before each vendor payment.'], ['rsvp', 'RSVP replies', 'Hear right away when a guest responds.'], ['digest', 'Weekly Summary', 'A Monday recap of what\'s coming up.']];
 function settingsSheet(focusId) {
   const d = S.details, [p1, p2] = (d.couple || '').split('&').map(x => x.trim());
   const f = (id, label, val, type = 'text', extra = '') => `<div class="field"><label for="st-${id}">${label}</label><input id="st-${id}" type="${type}" value="${esc(val)}" ${extra}></div>`;
   const sw = (grp, [k, a, b]) => `<div class="autorow"><span class="tx"><b>${a}</b><span class="note">${b}</span></span><button class="switch" role="switch" aria-checked="${!!S[grp][k]}" aria-label="${a}" data-act="${grp === 'auto' ? 'auto' : 'notify'}" data-k="${k}"></button></div>`;
   S.notify = S.notify || { tasks: true, pay: true, rsvp: true, digest: false };
   sheet(`<div class="help-hd"><h4>Settings</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
-  <div class="sect">Your wedding</div>
-  <div class="two">${f('p1', 'Partner one', p1)}${f('p2', 'Partner two', p2 || '')}</div>
-  <div class="two">${f('wd', 'Wedding date', d.wd, 'date')}${f('time', 'Ceremony time', d.time, 'time')}</div>
+  <div class="sect">Your Wedding</div>
+  <div class="two">${f('p1', 'Partner One', p1)}${f('p2', 'Partner Two', p2 || '')}</div>
+  <div class="two">${f('wd', 'Wedding Date', d.wd, 'date')}${f('time', 'Ceremony Time', d.time, 'time')}</div>
   ${f('venue', 'Venue', d.venue)}
-  ${f('street', 'Venue street address', d.street, 'text', 'autocomplete="off"')}
+  ${f('street', 'Venue Street Address', d.street, 'text', 'autocomplete="off"')}
   <div class="two">${f('city', 'City, state, ZIP', d.city)}${f('eng', 'Engaged on', d.eng, 'date')}</div>
-  ${f('target', 'Guest count goal', d.target, 'number', 'min="0" inputmode="numeric"')}
+  ${f('target', 'Guest Count Goal', d.target, 'number', 'min="0" inputmode="numeric"')}
   <div class="sect">RSVPs</div>
-  <div class="two">${f('rsvpBy', 'Reply by', d.rsvpBy, 'date')}${f('meals', 'Meal choices', d.meals, 'text', 'placeholder="Chicken, Beef, Fish"')}</div>
+  <div class="two">${f('rsvpBy', 'Reply by', d.rsvpBy, 'date')}${f('meals', 'Meal Choices', d.meals, 'text', 'placeholder="Chicken, Beef, Fish"')}</div>
   ${f('rsvpLink', 'RSVP website (optional)', d.rsvpLink, 'url', 'placeholder="https://…" autocomplete="off"')}
   <div class="note" style="margin-top:-6px">Have an RSVP page on Zola, The Knot or your own site? Paste it and it goes in every RSVP message. Leave it blank and guests simply reply YES or NO with their meal.</div>
-  <div class="sect">Key contacts</div>
-  <div class="two">${f('planner', 'Planner', d.planner)}${f('pphone', 'Planner phone', d.pphone, 'tel')}</div>
-  <div class="two">${f('pemail', 'Planner email', d.pemail, 'email')}${f('paddr', 'Planner address', d.paddr)}</div>
+  <div class="sect">Key Contacts</div>
+  <div class="two">${f('planner', 'Planner', d.planner)}${f('pphone', 'Planner Phone', d.pphone, 'tel')}</div>
+  <div class="two">${f('pemail', 'Planner Email', d.pemail, 'email')}${f('paddr', 'Planner Address', d.paddr)}</div>
   <div class="two">${f('doc', 'Day-of contact', d.doc)}${f('dphone', 'Day-of phone', d.dphone, 'tel')}</div>
   <div class="two">${f('demail', 'Day-of email', d.demail, 'email')}${f('daddr', 'Day-of address', d.daddr)}</div>
   <div class="note" style="margin-top:-6px">Blank email or address? The app fills them from your guest list or vendors when the name matches.</div>
-  <button class="btn plum" data-act="savesettings">Save changes</button>
-  <div class="sect">Smart steps</div>
+  <button class="btn plum" data-act="savesettings">Save Changes</button>
+  <div class="sect">Smart Steps</div>
   <div class="autos">${AUTOS.map(a => sw('auto', a)).join('')}</div>
   <div class="sect">Help</div>
-  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the app tour</b><span>Narrated video · 5:45</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter steps and common questions</span></span><span class="go">Open</span></button></div>
-  <div class="sect">Your data and Excel</div>
+  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the App Tour</b><span>Narrated video · 5:45</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter Steps and Common Questions</span></span><span class="go">Open</span></button></div>
+  <div class="sect">Your Data and Excel</div>
   <div class="note" style="margin-top:-4px">Already using The Wedding Desk Excel workbook? Bring everything in at once, or download a copy of what's in the app.</div>
   <div class="sharegrid"><label class="btn plum" style="cursor:pointer">${I.xlup} Import from Excel<input type="file" id="xlfile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label><button class="btn alt" data-act="xlexport">${I.xldown} Download Excel</button></div>
-  <div class="sharegrid"><button class="btn alt sm" data-act="blank">${I.plus} Start my own wedding</button><button class="btn alt sm" data-act="reset">${I.reset} Reload example</button></div>
+  <div class="sharegrid"><button class="btn alt sm" data-act="blank">${I.plus} Start My Own Wedding</button><button class="btn alt sm" data-act="reset">${I.reset} Reload Example</button></div>
   <div class="note">Start my own wedding clears the example so you can enter yours. Download Excel first if you want a copy.</div>`);
   if (focusId) { const el = document.getElementById(focusId); if (el) { el.scrollIntoView({ block: 'center' }); el.focus({ preventScroll: true }); } }
 }
@@ -1205,15 +1249,15 @@ function saveSettings() {
 }
 function helpSheet(play) {
   stopVideo();
-  const steps = [['Check your wedding details', 'Date, venue and countdown on Home', 'home', ''], ['Add your guests', 'Name, phone, email and address so you can reach them', 'guests', 'list'], ['Set your budget', 'See where the money goes by group', 'money', 'budget'], ['Line up your vendors', 'Track each one from first call to booked', 'vendors', 'vendors'], ['Work through the questionnaire', 'Decisions turn into tasks for you', 'plan', 'questions']];
-  const autos = AUTOS; void [['q', 'Questionnaire to tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto check-off', 'When you mark a thank-you as sent, its task is checked off.']];
+  const steps = [['Check Your Wedding Details', 'Date, venue and countdown on Home', 'home', ''], ['Add Your Guests', 'Name, phone, email and address so you can reach them', 'guests', 'list'], ['Set Your Budget', 'See where the money goes by group', 'money', 'budget'], ['Line Up Your Vendors', 'Track each one from first call to booked', 'vendors', 'vendors'], ['Work Through the Questionnaire', 'Decisions turn into tasks for you', 'plan', 'questions']];
+  const autos = AUTOS; void [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-you reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
   sheet(`<div class="help-hd"><h4>Info Center</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="vwrap"><video id="tourv" src="tour.mp4" poster="tour-poster.jpg" controls playsinline preload="metadata" aria-label="Screen recording tour of the app"></video></div>
   <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (5:45). Turn your sound on, and tap a chapter to jump to it.</div>
   <div class="opts">${CHAPTERS.map(c => `<button class="chip" data-act="vchap" data-t="${c.t}" aria-pressed="false">${c.label}</button>`).join('')}</div>
-  <div class="sect">Starter steps</div>
+  <div class="sect">Starter Steps</div>
   <div class="steps">${steps.map(([a, b, tab, sub], k) => `<button data-act="hgo" data-tab="${tab}" data-sub="${sub}"><span class="n">${k + 1}</span><span class="tx"><b>${a}</b><span>${b}</span></span><span class="go">Go</span></button>`).join('')}</div>
-  <div class="sect">Common questions</div>
+  <div class="sect">Common Questions</div>
   <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
   <button class="btn alt sm" data-act="settings">${I.gear} Settings: wedding details, smart steps and more</button>`);
   wireVideo(play);
@@ -1230,12 +1274,12 @@ function buildSpec() {
     const ts = S.tasks.filter(t => (o.scope === 'all' || OPEN(t)) && (o.owner === 'Everyone' || t.Owner === o.owner)).sort((a, b) => (a['Due Date'] || '9').localeCompare(b['Due Date'] || '9'));
     const g = {}; ts.forEach(t => { const d = D(t['Due Date']); const key = !OPEN(t) ? 'Completed' : !d ? 'No date yet' : days(t['Due Date']) < 0 ? 'Overdue' : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); (g[key] = g[key] || []).push(t); });
     const order = Object.keys(g).sort((a, b) => (a === 'Overdue' ? -1 : b === 'Overdue' ? 1 : a === 'Completed' ? 1 : b === 'Completed' ? -1 : 0));
-    return { ...base, title: o.owner === 'Everyone' ? (o.scope === 'all' ? 'All tasks' : 'Tasks to do') : `Tasks for ${o.owner}`, check: true, cols: [['Task', .52], ['Who', .2], ['Due', .13], ['Priority', .15]],
+    return { ...base, title: o.owner === 'Everyone' ? (o.scope === 'all' ? 'All Tasks' : 'Tasks to Do') : `Tasks for ${o.owner}`, check: true, cols: [['Task', .52], ['Who', .2], ['Due', .13], ['Priority', .15]],
       groups: order.map(n => ({ name: `${n} (${g[n].length})`, rows: g[n].map(t => ({ done: !OPEN(t), c: [t.Task, t.Owner, shortD(t['Due Date']), t.Priority] })) })) };
   }
   if (k === 'dayof') {
     const by = {}; S.planner.slice().sort((a, b) => (a.Date + a.Time).localeCompare(b.Date + b.Time)).forEach(e => (by[`${e['Day Of']} · ${fmtD(e.Date)}`] = by[`${e['Day Of']} · ${fmtD(e.Date)}`] || []).push(e));
-    return { ...base, title: 'Wedding day schedule', cols: [['Time', .14], ['What', .4], ['Who', .2], ['Notes', .26]], groups: Object.entries(by).map(([n, es]) => ({ name: n, rows: es.map(e => ({ c: [time12(e.Time), e.Activity, e.Owner, e.Notes || ''] })) })) };
+    return { ...base, title: 'Wedding Day Schedule', cols: [['Time', .14], ['What', .4], ['Who', .2], ['Notes', .26]], groups: Object.entries(by).map(([n, es]) => ({ name: n, rows: es.map(e => ({ c: [time12(e.Time), e.Activity, e.Owner, e.Notes || ''] })) })) };
   }
   if (k === 'payments') {
     const up = S.payments.filter(p => p.Status !== 'Paid').sort((a, b) => (a['Due Date'] || '').localeCompare(b['Due Date'] || ''));
@@ -1243,11 +1287,11 @@ function buildSpec() {
     const tot = l => money(l.reduce((a, p) => a + (+p.Amount || 0), 0));
     const groups = [{ name: `Still to pay · ${tot(up)}`, rows: up.map(p => ({ c: [shortD(p['Due Date']), p.Vendor, p.Payment, money(p.Amount)] })) }];
     if (o.scope === 'all') groups.push({ name: `Paid · ${tot(pd)}`, rows: pd.map(p => ({ done: true, c: [shortD(p['Paid On'] || p['Due Date']), p.Vendor, p.Payment, money(p.Amount)] })) });
-    return { ...base, title: 'Payment schedule', cols: [['Due', .14], ['Vendor', .38], ['Payment', .3], ['Amount', .18]], groups };
+    return { ...base, title: 'Payment Schedule', cols: [['Due', .14], ['Vendor', .38], ['Payment', .3], ['Amount', .18]], groups };
   }
-  const order = ['Accepted', 'Invited', 'Waitlist', 'Declined'], lab = { Accepted: 'Attending', Invited: 'Awaiting reply', Waitlist: 'Waitlist', Declined: 'Declined' };
+  const order = ['Accepted', 'Invited', 'Waitlist', 'Declined'], lab = { Accepted: 'Attending', Invited: 'Awaiting Reply', Waitlist: 'Waitlist', Declined: 'Declined' };
   const ps = S.people.filter(p => o.scope === 'all' || p.RSVP === 'Accepted');
-  return { ...base, title: o.scope === 'all' ? 'Guest list' : 'Attending guests', cols: [['Name', .34], ['Table', .1], ['Meal', .22], ['Phone', .34]],
+  return { ...base, title: o.scope === 'all' ? 'Guest List' : 'Attending Guests', cols: [['Name', .34], ['Table', .1], ['Meal', .22], ['Phone', .34]],
     groups: order.map(r => ({ name: `${lab[r]} (${ps.filter(p => p.RSVP === r).length})`, rows: ps.filter(p => p.RSVP === r).sort((a, b) => (+a.Table || 99) - (+b.Table || 99)).map(p => ({ c: [p.Name, p.Table ? String(p.Table) : '', p['Meal Choice'] || '', p.Phone || ''] })) })).filter(g => g.rows.length) };
 }
 function paperHtml(sp) {
@@ -1261,13 +1305,13 @@ function shareSheet() {
   const k = UI.shareKind, o = UI.share, sp = buildSpec();
   const ch = (key, v, l) => `<button class="chip" data-act="shareopt" data-k="${key}" data-v="${esc(v)}" aria-pressed="${o[key] === v}">${esc(l)}</button>`;
   let opts = '';
-  if (k === 'tasks') { const owners = [...new Set(S.tasks.filter(t => o.scope === 'all' || OPEN(t)).map(t => t.Owner))].sort(); opts = `<div class="opts">${ch('scope', 'open', 'To do only')}${ch('scope', 'all', 'Include completed')}</div><div class="field"><label for="sh-owner">For</label><select id="sh-owner" class="sel" data-shareowner="1" style="padding:9px 26px 9px 10px">${opt(['Everyone', ...owners], o.owner)}</select></div>`; }
-  if (k === 'payments') opts = `<div class="opts">${ch('scope', 'open', 'Still to pay')}${ch('scope', 'all', 'Include paid')}</div>`;
-  if (k === 'guests') opts = `<div class="opts">${ch('scope', 'all', 'Everyone invited')}${ch('scope', 'accepted', 'Attending only')}</div>`;
+  if (k === 'tasks') { const owners = [...new Set(S.tasks.filter(t => o.scope === 'all' || OPEN(t)).map(t => t.Owner))].sort(); opts = `<div class="opts">${ch('scope', 'open', 'To Do Only')}${ch('scope', 'all', 'Include Completed')}</div><div class="field"><label for="sh-owner">For</label><select id="sh-owner" class="sel" data-shareowner="1" style="padding:9px 26px 9px 10px">${opt(['Everyone', ...owners], o.owner)}</select></div>`; }
+  if (k === 'payments') opts = `<div class="opts">${ch('scope', 'open', 'Still to Pay')}${ch('scope', 'all', 'Include Paid')}</div>`;
+  if (k === 'guests') opts = `<div class="opts">${ch('scope', 'all', 'Everyone Invited')}${ch('scope', 'accepted', 'Attending Only')}</div>`;
   const keepScroll = layer.querySelector('.sheet')?.scrollTop || 0;
-  sheet(`<h4>Share or print</h4><div class="lead">Make a clean one-page summary anyone can read at a glance.</div>${opts}
+  sheet(`<h4>Share or Print</h4><div class="lead">Make a clean one-page summary anyone can read at a glance.</div>${opts}
   ${paperHtml(sp)}
-  <div class="sharegrid"><button class="btn plum" data-act="pdf">${I.pdf} Save as PDF</button><button class="btn" data-act="nativeshare">${I.share} Share</button><button class="btn alt" data-act="print">${I.print} Print</button><button class="btn alt" data-act="copytext">${I.copy} Copy for a text</button></div>
+  <div class="sharegrid"><button class="btn plum" data-act="pdf">${I.pdf} Save as PDF</button><button class="btn" data-act="nativeshare">${I.share} Share</button><button class="btn alt" data-act="print">${I.print} Print</button><button class="btn alt" data-act="copytext">${I.copy} Copy for a Text</button></div>
   <div class="note">Tip: Save as PDF, then attach it to a text or email. Copy for a text pastes a short version straight into a message.</div>
   <button class="btn alt" data-close="1">Done</button>`);
   const sh = layer.querySelector('.sheet'); if (sh) sh.scrollTop = keepScroll;
@@ -1324,7 +1368,7 @@ async function doShare() {
 
 /* ---------- Excel import / export ---------- */
 const XTABS = [['Questionnaire', 'questions', 'Question'], ['Tasks', 'tasks', 'Task'], ['Risks', 'risks', 'Risk'], ['Budget', 'budget', 'Category'], ['Payments', 'payments', 'Vendor'], ['People', 'people', 'Name'], ['Vendors', 'vendors', 'Company'], ['Planner', 'planner', 'Activity'], ['Locations', 'locations', 'Location Name'], ['Photos', 'photos', 'Shot Description'], ['Music', 'music', 'Moment'], ['Transportation', 'rides', 'Service'], ['Lodging', 'lodging', 'Guest'], ['Equipment', 'equipment', 'Item']];
-const XLABEL = { questions: 'Questionnaire items', tasks: 'Tasks', risks: 'Risks', budget: 'Budget lines', payments: 'Payments', people: 'Guests', vendors: 'Vendors', planner: 'Wedding-day events', locations: 'Places', photos: 'Photo shots', music: 'Songs', rides: 'Rides', lodging: 'Hotel rooms', equipment: 'Rentals' };
+const XLABEL = { questions: 'Questionnaire Items', tasks: 'Tasks', risks: 'Risks', budget: 'Budget Lines', payments: 'Payments', people: 'Guests', vendors: 'Vendors', planner: 'Wedding-day events', locations: 'Places', photos: 'Photo Shots', music: 'Songs', rides: 'Rides', lodging: 'Hotel Rooms', equipment: 'Rentals' };
 const DATE_COLS = ['Due Date', 'Date', 'Paid On', 'Next Payment Due'], TIME_COLS = ['Time'];
 const DCELLS = { couple: 'D15', eng: 'D16', wd: 'D17', time: 'D18', venue: 'H15', street: 'H16', city: 'H17', target: 'H18', planner: 'L15', pphone: 'L16', doc: 'L17', dphone: 'L18' };
 const DLABELS = { couple: ['B15', 'Couple'], eng: ['B16', 'Engagement Date'], wd: ['B17', 'Wedding Date'], time: ['B18', 'Wedding Start Time'], venue: ['F15', 'Venue'], street: ['F16', 'Street Address'], city: ['F17', 'City, State, ZIP'], target: ['F18', 'Guest Count Target'], planner: ['J15', 'Planner / Coordinator'], pphone: ['J16', 'Planner Phone'], doc: ['J17', 'Day-Of Contact'], dphone: ['J18', 'Day-Of Contact Phone'] };
@@ -1368,7 +1412,7 @@ function importSheet() {
   const P = PENDING, total = Object.values(P.found).reduce((a, r) => a + r.length, 0);
   const ch = (v, l) => `<button class="chip" data-act="impmode" data-v="${v}" aria-pressed="${P.mode === v}">${l}</button>`;
   sheet(`<h4>Import from Excel</h4><div class="lead">${esc(P.name)}</div>
-  <div class="kv">${P.details ? `<div><span>Wedding details</span><b>${esc(P.details.couple || 'Found')}</b></div>` : ''}${Object.entries(P.found).map(([k, r]) => `<div><span>${XLABEL[k]}</span><b class="num">${r.length}</b></div>`).join('')}</div>
+  <div class="kv">${P.details ? `<div><span>Wedding Details</span><b>${esc(P.details.couple || 'Found')}</b></div>` : ''}${Object.entries(P.found).map(([k, r]) => `<div><span>${XLABEL[k]}</span><b class="num">${r.length}</b></div>`).join('')}</div>
   <div class="opts">${ch('replace', 'Replace what\'s in the app')}${ch('add', 'Add to what\'s in the app')}</div>
   <div class="note">${P.mode === 'replace' ? 'Everything in the app is swapped for what\'s in this file. Tabs left blank in the file are cleared too.' : 'New rows are added after what you already have. Wedding details are only filled in where yours are blank.'}</div>
   <button class="btn plum" data-act="impgo">Import ${total} rows</button><button class="btn alt" data-close="1">Cancel</button>`);
@@ -1446,14 +1490,13 @@ document.addEventListener('click', e => {
   if (ds.kc) return contactSheet(ds.kc);
   if (ds.edittask) return taskForm(+ds.edittask);
   if (ds.rr) return recordReply(+ds.rr, ds.r);
-  if (ds.act === 'blank') return sheet(`<h4>Start your own wedding?</h4><div class="lead">This clears the example wedding: every task, guest, payment, vendor and detail. You can reload the example later from Settings.</div><button class="btn" data-act="blank-go">Yes, clear it and start fresh</button><button class="btn alt" data-close="1">Cancel</button>`);
-  if (ds.act === 'blank-go') { S = freshState(); for (const k of ['tasks', 'risks', 'budget', 'payments', 'people', 'vendors', 'planner', 'locations', 'photos', 'music', 'rides', 'lodging', 'equipment']) S[k] = []; S.questions = S.questions.map(q => ({ ...q, Answer: '', Status: 'Not Started', 'Action Item': '', Notes: '' })); S.details = { couple: '', eng: '', wd: '', time: '', venue: '', street: '', city: '', target: '', planner: '', pphone: '', doc: '', dphone: '', rsvpBy: '', rsvpLink: '', meals: 'Chicken, Beef, Fish, Vegetarian', pemail: '', paddr: '', demail: '', daddr: '' }; S.seenWelcome = true; save(); closeSheet(); go('home'); toast('All clear. Add your details to begin.', { label: 'Settings', fn: settingsSheet }); return; }
-  if (ds.act === 'reset') { S = freshState(); S.seenWelcome = true; save(); closeSheet(); toast('Example data restored'); return render(); }
+  if (ds.act === 'blank') return confirmBox('Start Your Own Wedding?', 'This clears the example wedding: every task, guest, payment, vendor and detail. You can reload the example later from Settings.', 'Clear and Start', startFresh);
+  if (ds.act === 'reset') return confirmBox('Reload the Example?', 'Everything you have entered is replaced with the example wedding. This can’t be undone.', 'Reload', () => { S = freshState(); S.seenWelcome = true; save(); closeSheet(); toast('Example data restored'); render(); });
   if (ds.act === 'help') return helpSheet(false);
   if (ds.act === 'settings') return settingsSheet();
   if (ds.act === 'xlexport') return exportExcel();
   if (ds.act === 'impmode') { PENDING.mode = ds.v; return importSheet(); }
-  if (ds.act === 'impgo') return applyImport();
+  if (ds.act === 'impgo') return PENDING?.mode === 'replace' ? confirmBox('Replace Everything?', 'Everything in the app is swapped for what’s in this Excel file. Tabs left blank in the file are cleared too.', 'Replace', applyImport) : applyImport();
   if (ds.act === 'savesettings') return saveSettings();
   if (ds.act === 'notify') { S.notify[ds.k] = !S.notify[ds.k]; save(); t.setAttribute('aria-checked', S.notify[ds.k]); return toast(S.notify[ds.k] ? 'Notification on' : 'Notification off'); }
   if (ds.act === 'help-play') return helpSheet(true);
@@ -1467,9 +1510,9 @@ document.addEventListener('click', e => {
   if (ds.act === 'saveguest') return saveGuest(ds.i);
   if (ds.act === 'savevendor') return saveVendor(ds.i);
   if (ds.act === 'savepay') return savePay();
-  if (ds.act === 'deltask') return delTask(+ds.i);
-  if (ds.act === 'delguest') return delGuest(+ds.i);
-  if (ds.act === 'delvendor') return delVendor(+ds.i);
+  if (ds.act === 'deltask') { const i = +ds.i; return confirmBox('Delete Task?', `“${esc(S.tasks[i]?.Task || 'This task')}” will be removed.`, 'Delete', () => delTask(i)); }
+  if (ds.act === 'delguest') { const i = +ds.i; return confirmBox('Remove Guest?', `${esc(S.people[i]?.Name || 'This guest')} will be removed from your guest list.`, 'Remove', () => delGuest(i)); }
+  if (ds.act === 'delvendor') { const i = +ds.i; return confirmBox('Remove Vendor?', `${esc(S.vendors[i]?.Company || 'This vendor')} will be removed from your vendors.`, 'Remove', () => delVendor(i)); }
   if (ds.act === 'replies') return repliesSheet();
   if (ds.act === 'pwtoggle') { const inp = document.getElementById('vf-pw'); inp.type = inp.type === 'password' ? 'text' : 'password'; return; }
   if (ds.act === 'pwshow') { const sp = document.getElementById('pw' + ds.i); const shown = sp.textContent !== '••••••••'; sp.textContent = shown ? '••••••••' : sp.dataset.pw; return; }
@@ -1480,7 +1523,7 @@ document.addEventListener('click', e => {
   if (ds.act === 'pdf') return doPdf();
   if (ds.act === 'print') return doPrint();
   if (ds.act === 'nativeshare') return doShare();
-  if (ds.act === 'copytext') return copy(shareText(buildSpec()), 'Text version');
+  if (ds.act === 'copytext') return copy(shareText(buildSpec()), 'Text Version');
   if (ds.act === 'auto') { S.auto[ds.k] = !S.auto[ds.k]; save(); t.setAttribute('aria-checked', S.auto[ds.k]); return toast(S.auto[ds.k] ? 'Smart step on' : 'Smart step off'); }
   if (ds.act === 'vchap') { const v = document.getElementById('tourv'); if (v) { v.currentTime = +ds.t; v.play().catch(() => {}); } return; }
   if (ds.act === 'hgo') { S.seenWelcome = true; save(); closeSheet(); return go(ds.tab, ds.sub); }
