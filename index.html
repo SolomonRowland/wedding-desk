@@ -711,7 +711,7 @@ function renderHome() {
     <div class="tl"><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
     <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning Timeline'}</span><span>${Math.round(s.pct * 100)}% of Planning Time Used</span></div></div>`;
   return { eyebrow: d.wd ? longD(d.wd) : 'Your Wedding', title: d.couple || 'Welcome!', head, html: `
-  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to Wedding Planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (6:31, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
+  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to Wedding Planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (6:32, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
   <section class="tiles">
     ${tile('var(--hdr)', 'Budget', Math.round(s.actual / (s.budget || 1) * 100) + '%', `${money(s.actual)} booked`, '', 'data-go="money"')}
     ${tile('var(--plum)', 'Guests', s.acc, `accepted of ${s.total} · ${s.inv} awaiting`, '', 'data-go="guests"')}
@@ -1328,7 +1328,7 @@ function savePay() {
 }
 
 /* ---------- Info Center ---------- */
-const CHAPTERS = [{"label": "Welcome", "t": 0.0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.7}, {"label": "Plan", "t": 76.6}, {"label": "Decisions", "t": 114.8}, {"label": "Wedding Day", "t": 142.1}, {"label": "Guests", "t": 162.0}, {"label": "RSVPs", "t": 209.3}, {"label": "Money", "t": 243.9}, {"label": "Vendors", "t": 270.7}, {"label": "Make It Yours", "t": 299.2}, {"label": "Share or print", "t": 344.9}, {"label": "You’re ready", "t": 379.4}];
+const CHAPTERS = [{"label": "Welcome", "t": 0.0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 44.9}, {"label": "Plan", "t": 76.8}, {"label": "Decisions", "t": 115.2}, {"label": "Wedding Day", "t": 142.7}, {"label": "Guests", "t": 162.6}, {"label": "RSVPs", "t": 210.0}, {"label": "Money", "t": 244.8}, {"label": "Vendors", "t": 271.6}, {"label": "Make It Yours", "t": 300.1}, {"label": "Share or print", "t": 346.1}, {"label": "You’re ready", "t": 380.8}];
 function stopVideo() { const v = document.getElementById('tourv'); if (v) v.pause(); }
 function wireVideo(play) {
   const v = document.getElementById('tourv'); if (!v) return;
@@ -1388,7 +1388,7 @@ function settingsSheet(focusId) {
   <div class="sect">Smart Steps</div>
   <div class="autos">${AUTOS.map(a => sw('auto', a)).join('')}</div>
   <div class="sect">Help</div>
-  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the App Tour</b><span>Narrated video · 6:31</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter Steps and Common Questions</span></span><span class="go">Open</span></button></div>
+  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the App Tour</b><span>Narrated video · 6:32</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter Steps and Common Questions</span></span><span class="go">Open</span></button></div>
   <div class="sect">Reminders</div>
   <div class="note" style="margin-top:-4px">Put every upcoming task, payment and wedding-day time on your phone's calendar, with alerts. Payments remind you three days early. Run it again after big changes.</div>
   <button class="btn alt" data-act="ics">${I.cal} Add Dates to My Calendar</button>
@@ -1414,7 +1414,7 @@ function helpSheet(play) {
   const autos = AUTOS; void [['q', 'Questionnaire to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-You Reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
   sheet(`<div class="help-hd"><h4>Info Center</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="vwrap"><video id="tourv" src="tour.mp4" poster="tour-poster.jpg" controls playsinline preload="metadata" aria-label="Screen recording tour of the app"></video></div>
-  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (6:31). Turn your sound on, and tap a chapter to jump to it.</div>
+  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (6:32). Turn your sound on, and tap a chapter to jump to it.</div>
   <div class="opts">${CHAPTERS.map(c => `<button class="chip" data-act="vchap" data-t="${c.t}" aria-pressed="false">${c.label}</button>`).join('')}</div>
   <div class="sect">Starter Steps</div>
   <div class="steps">${steps.map(([a, b, tab, sub], k) => `<button data-act="hgo" data-tab="${tab}" data-sub="${sub}"><span class="n">${k + 1}</span><span class="tx"><b>${a}</b><span>${b}</span></span><span class="go">Go</span></button>`).join('')}</div>
