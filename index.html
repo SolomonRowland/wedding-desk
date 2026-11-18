@@ -781,7 +781,7 @@ function renderPlan() {
   }
   if (UI.plan === 'lists') body = segbar('planList', [['photos', 'Photo Shots'], ['music', 'Music'], ['risks', 'Risks']], true) + body;
   const act = UI.plan === 'tasks' ? hdrBtn('share', I.share, 'Share or Print Tasks', 'data-kind="tasks"') : UI.plan === 'dayof' ? hdrBtn('share', I.share, 'Share or Print the Schedule', 'data-kind="dayof"') : '';
-  return { eyebrow: `${open} tasks to do`, title: 'Plan', act, fab: UI.plan === 'tasks' ? ['addtask', 'Task'] : null, tabs: segbar('plan', [['tasks', 'Tasks'], ['dayof', 'Day Of'], ['questions', 'Decisions'], ['lists', 'Lists']]), html: body };
+  return { eyebrow: `${open} tasks to do`, title: 'Plan', act, fab: UI.plan === 'tasks' ? ['addtask', 'Task'] : null, tabs: segbar('plan', [['tasks', 'Tasks'], ['dayof', 'Schedule'], ['questions', 'Decisions'], ['lists', 'Lists']]), html: body };
 }
 
 /* ---------- GUESTS ---------- */
