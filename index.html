@@ -505,6 +505,9 @@ button.tcard:active { transform: scale(.97); }
 #gsres .row .chev svg { width: 16px; height: 16px; color: var(--mauve); }
 #gsres .chev { display: grid; place-items: center; transform: rotate(-90deg); }
 .row .isdone, .row.isdone .t { }
+.selbtn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 11px; border-radius: 99px; background: var(--okbg); color: var(--plum); font: 600 12.5px var(--body); white-space: nowrap; }
+.selbtn svg { width: 14px; height: 14px; }
+.selbtn.on { background: var(--plum); color: #fff; }
 </style>
 
 <div class="app" id="app">
@@ -820,7 +823,7 @@ function renderGuests() {
     const pill = r => r === 'Accepted' ? 'pill done' : r === 'Declined' ? 'pill red' : r === 'Waitlist' ? 'pill soft' : 'pill rose';
     body = `
     ${s.inv ? `<section class="rsvpbar"><div class="hd"><b>${s.inv} still to reply</b><span class="note">${S.people.filter(p => p.RSVP === 'Invited' && p.rsvpAsked).length} asked so far</span></div><div class="acts"><button class="btn plum" data-act="rsvp" data-mode="sms">${I.sms} Text</button><button class="btn plum" data-act="rsvp" data-mode="email">${I.mail} Email</button><button class="btn alt" data-act="replies">${I.check} Replies</button></div></section>` : ''}
-    <section class="card flush"><div class="sh"><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3><button class="more" data-act="select">${UI.selecting ? 'Done' : 'Select'}</button></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
+    <section class="card flush"><div class="sh"><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3><button class="selbtn ${UI.selecting ? 'on' : ''}" data-act="select">${UI.selecting ? 'Done' : I.select + ' Select to Message'}</button></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
   } else if (UI.guests === 'seating') {
     const att = S.people.filter(p => !['Declined', 'Waitlist'].includes(p.RSVP));
     const tables = [...new Set(att.map(p => p.Table).filter(Boolean))].sort((a, b) => a - b);
