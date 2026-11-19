@@ -1354,7 +1354,7 @@ const FAQ = [
   ['Can I search everything at once?', 'Yes. Tap the magnifying glass on Home to find any guest, vendor, task, schedule event, place or payment.'],
   ['How do I share my task list with someone?', 'On Plan, tap the share icon at the top. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
   ['What is the difference between Booked and Paid?', 'Booked is what you have agreed to pay vendors. Paid is money already sent. The gap between them is what you still owe.'],
-  ['Can my partner or planner use this too?', 'Your plan is saved privately on this phone, with no account, ads or vendor sales calls. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your partner can import it on their phone.'],
+  ['Can my fiancé or planner use this too?', 'Your plan is saved privately on this phone, with no account, ads or vendor sales calls. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your fiancé can import it on their phone.'],
   ['How long is the tour, and can I skip around?', 'It runs 5 minutes 45 seconds, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes the full Excel workbook and user guide, which track the same information.'],
   ['Can I bring in my Excel workbook, or get my data out?', 'Yes. In Settings, tap Import from Excel and pick your Wedding Desk workbook. You will see what was found before anything changes, and can replace or add to what is in the app. Download Excel gives you a copy of everything in the app at any time.'],
@@ -1368,7 +1368,7 @@ function settingsSheet(focusId) {
   S.notify = S.notify || { tasks: true, pay: true, rsvp: true, digest: false };
   sheet(`<div class="help-hd"><h4>Settings</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="sect">Your Wedding</div>
-  <div class="two">${f('p1', 'Partner One', p1)}${f('p2', 'Partner Two', p2 || '')}</div>
+  <div class="two">${f('p1', 'Bride', p1)}${f('p2', 'Groom', p2 || '')}</div>
   <div class="two">${f('wd', 'Wedding Date', d.wd, 'date')}${f('time', 'Ceremony Time', d.time, 'time')}</div>
   ${f('venue', 'Venue', d.venue)}
   ${f('street', 'Venue Street Address', d.street, 'text', 'autocomplete="off"')}
@@ -1393,7 +1393,7 @@ function settingsSheet(focusId) {
   <div class="note" style="margin-top:-4px">Put every upcoming task, payment and wedding-day time on your phone's calendar, with alerts. Payments remind you three days early. Run it again after big changes.</div>
   <button class="btn alt" data-act="ics">${I.cal} Add Dates to My Calendar</button>
   <div class="sect">Your Data and Excel</div>
-  <div class="note" style="margin-top:-4px">Your plan lives only on this phone. ${S.lastExport ? `Last Excel copy: <b style="color:var(--ink)">${fmtD(S.lastExport)}</b>.` : '<b style="color:var(--ink)">No Excel copy yet.</b>'} Download an Excel copy now and then as a backup or to send your partner, and import a workbook to bring everything in.</div>
+  <div class="note" style="margin-top:-4px">Your plan lives only on this phone. ${S.lastExport ? `Last Excel copy: <b style="color:var(--ink)">${fmtD(S.lastExport)}</b>.` : '<b style="color:var(--ink)">No Excel copy yet.</b>'} Download an Excel copy now and then as a backup or to send your fiancé, and import a workbook to bring everything in.</div>
   <div class="sharegrid"><label class="btn plum" style="cursor:pointer">${I.xlup} Import from Excel<input type="file" id="xlfile" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></label><button class="btn alt" data-act="xlexport">${I.xldown} Download Excel</button></div>
   <div class="sharegrid"><button class="btn alt sm" data-act="blank">${I.plus} Start My Own Wedding</button><button class="btn alt sm" data-act="reset">${I.reset} Reload Example</button></div>
   <div class="note">Start my own wedding clears the example so you can enter yours. Download Excel first if you want a copy.</div>`);
