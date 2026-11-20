@@ -225,6 +225,12 @@ main { padding: 4px max(16px, env(safe-area-inset-right, 0px)) 110px max(16px, e
 .scrim { position: fixed; inset: 0; background: rgba(63,42,41,.38); z-index: 20; display: grid; align-items: end; justify-items: center; animation: fade .18s ease; }
 .sheet { width: 100%; max-width: 460px; max-height: 88%; overflow-y: auto; background: var(--petal); border-radius: 24px 24px 0 0; padding: 10px max(18px, env(safe-area-inset-right, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(18px, env(safe-area-inset-left, 0px)); display: grid; gap: 14px; animation: up .22s ease; }
 .sheet .grab { width: 40px; height: 4px; border-radius: 99px; background: var(--smauve); justify-self: center; }
+.sheet .shead { position: sticky; top: -10px; z-index: 3; margin: -10px calc(-1 * max(18px, env(safe-area-inset-left, 0px))) -4px; padding: 10px max(18px, env(safe-area-inset-left, 0px)) 6px; background: var(--petal); display: flex; align-items: center; min-height: 32px; }
+.sheet .shead .grab { position: absolute; left: 50%; top: 10px; margin-left: -20px; }
+.sheet .sback { display: inline-flex; align-items: center; gap: 1px; height: 30px; max-width: 58%; padding: 0 12px 0 6px; margin-top: 8px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); color: var(--plum); font: 600 13px var(--body); cursor: pointer; box-shadow: 0 1px 2px rgba(63,42,41,.05); }
+.sheet .sback span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet .sback svg { flex: none; }
+.sheet .sback:active { background: var(--blush); }
 .sheet h4 { font: 600 26px/1.05 var(--display); color: var(--deep); margin: 0; text-wrap: balance; }
 .sheet .lead { color: var(--muted); font-size: 13px; margin-top: -8px; }
 .kv { background: var(--surface); border-radius: 14px; overflow: hidden; }
@@ -280,8 +286,8 @@ button:disabled { opacity: .45; }
 .loose b { font-size: 17px !important; }
 .date b { font-size: 16px !important; }
 .tcard .h b { font-family: var(--display) !important; font-size: 20px !important; letter-spacing: 0; }
-.vwrap { background: var(--dplum); border-radius: 18px; overflow: hidden; display: grid; place-items: center; padding: 10px; }
-.vwrap video { display: block; height: min(58vh, 520px); max-width: 100%; aspect-ratio: 9 / 16; border-radius: 10px; background: #000; }
+.vwrap { background: var(--dplum); border-radius: 18px; overflow: hidden; display: grid; place-items: center; padding: 6px; }
+.vwrap video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 10px; background: #F7F1EC; }
 .opts .chip { padding: 6px 11px; font-size: 12px; }
 .sheet { grid-auto-rows: max-content; }
 .paper table { font-size: inherit; }
@@ -748,7 +754,7 @@ function renderHome() {
     <div class="tl"><div class="bar"><i style="width:${(s.pct * 100).toFixed(1)}%"></i></div>
     <div class="lbl"><span>${d.eng ? 'Engaged ' + fmtD(d.eng) : 'Planning Timeline'}</span><span>${Math.round(s.pct * 100)}% of Planning Time Used</span></div></div>`;
   return { eyebrow: d.wd ? longD(d.wd) : 'Your Wedding', title: d.couple || 'Welcome!', head, html: `
-  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to Wedding Planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (6:33, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
+  ${S.seenWelcome ? '' : `<section class="welcome"><button class="x" data-act="welcome-x" aria-label="Dismiss">×</button><h3>New to Wedding Planning?</h3><div class="note" style="color:var(--ink)">Everything you need is here. Watch the narrated tour (2:28, sound on), then follow the five starter steps. This card goes away once you've watched it. You can replay the tour any time from <b style="color:var(--plum)">?</b> or Settings.</div><div class="btnrow"><button class="btn plum sm" data-act="help-play">${I.play} Watch the Tour</button><button class="btn alt sm" data-act="help">Starter Steps</button></div></section>`}
   <section class="card flush focus">
     <div class="sh"><h3>This Week</h3>${focus.total > focus.rows.length ? `<button class="more" data-go="plan" data-sub="tasks" data-filter="open">See All</button>` : ''}</div>
     ${focus.msg ? `<div class="fsub">${focus.msg}</div>` : ''}
@@ -1046,12 +1052,28 @@ const tipHint = type => { const k = Object.keys(TIPS).find(x => (type || '').toL
 
 /* ---------- sheets ---------- */
 const layer = document.getElementById('layer');
-function sheet(html) { layer.innerHTML = `<div class="scrim" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc((html.match(/<h4[^>]*>([^<]*)/) || [])[1] || 'Details')}"><div class="grab"></div>${html}</div></div>`; const sh = layer.querySelector('.sheet'); sh.tabIndex = -1; sh.focus({ preventScroll: true }); sh.scrollTop = 0; }
+/* back navigation between sheets: remember which sheet opened which */
+let SH_OPEN = null, SH_CUR = null, SH_STACK = [];
+const shKey = o => { try { return o.fn + '|' + JSON.stringify(o.args); } catch (e) { return o.fn + '|?'; } };
+function sheetBack() { const prev = SH_STACK.pop(); if (!prev) return closeSheet(); SH_CUR = null; SH_OPEN = { ...prev, back: true }; window[prev.fn](...prev.args); }
+function sheet(html) {
+  const title = (html.match(/<h4[^>]*>([^<]*)/) || [])[1] || 'Details', open = layer.innerHTML !== '' && layer.querySelector('.sheet');
+  if (!open) { SH_STACK = []; SH_CUR = null; }
+  const o = SH_OPEN; SH_OPEN = null;
+  if (o) {
+    const k = shKey(o), at = SH_STACK.findIndex(x => shKey(x) === k);
+    if (at >= 0) SH_STACK.length = at;
+    else if (open && !o.back && SH_CUR && shKey(SH_CUR) !== k && !/Form$|^importSheet$/.test(SH_CUR.fn)) SH_STACK.push(SH_CUR);
+    SH_CUR = { fn: o.fn, args: o.args, title };
+  } else if (SH_CUR) SH_CUR.title = title;
+  const prev = SH_STACK[SH_STACK.length - 1], dest = prev ? prev.title : ((TABS.find(t => t[0] === UI.tab) || [])[1] || 'Back');
+  const back = `<div class="shead"><button class="sback" data-act="sheetback" aria-label="Back to ${esc(dest)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>${esc(dest)}</span></button><div class="grab"></div></div>`;
+  layer.innerHTML = `<div class="scrim" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">${back}${html}</div></div>`; const sh = layer.querySelector('.sheet'); sh.tabIndex = -1; sh.focus({ preventScroll: true }); sh.scrollTop = 0; }
 let drag = null;
 layer.addEventListener('touchstart', e => { const sh = e.target.closest('.sheet'); if (!sh || sh.scrollTop > 0 || e.target.closest('input,textarea,select,video')) return; drag = { sh, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
 layer.addEventListener('touchmove', e => { if (!drag) return; drag.dy = Math.max(0, e.touches[0].clientY - drag.y); if (drag.dy > 4) { drag.sh.classList.add('dragging'); drag.sh.style.transform = `translateY(${drag.dy}px)`; } }, { passive: true });
 layer.addEventListener('touchend', () => { if (!drag) return; const { sh, dy } = drag; drag = null; sh.classList.remove('dragging'); if (dy > 110) { sh.style.transform = 'translateY(100%)'; setTimeout(closeSheet, 180); } else sh.style.transform = ''; });
-function closeSheet() { stopVideo(); layer.innerHTML = ''; }
+function closeSheet() { stopVideo(); layer.innerHTML = ''; SH_STACK = []; SH_CUR = null; SH_OPEN = null; }
 function toast(msg, action) { document.querySelectorAll('.toast').forEach(x => x.remove()); const t = document.createElement('div'); t.className = 'toast' + (layer.innerHTML ? ' up' : ''); t.setAttribute('role', 'status'); const sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
   if (action) { const b = document.createElement('button'); b.textContent = action.label; b.onclick = () => { t.remove(); action.fn(); }; t.appendChild(b); }
   document.body.appendChild(t); setTimeout(() => t.remove(), action ? 4500 : 2400); }
@@ -1425,7 +1447,7 @@ function savePay() {
 }
 
 /* ---------- Info Center ---------- */
-const CHAPTERS = [{"label": "Welcome", "t": 0.0}, {"label": "Set up", "t": 16.8}, {"label": "Home", "t": 45.3}, {"label": "Plan", "t": 77.1}, {"label": "Decisions", "t": 115.6}, {"label": "Wedding Day", "t": 143.0}, {"label": "Guests", "t": 162.9}, {"label": "RSVPs", "t": 210.4}, {"label": "Money", "t": 245.1}, {"label": "Vendors", "t": 272.0}, {"label": "Make It Yours", "t": 300.5}, {"label": "Share or print", "t": 346.5}, {"label": "You’re ready", "t": 381.3}];
+const CHAPTERS = [{"label": "Welcome", "t": 0}, {"label": "Import from Excel", "t": 15.7}, {"label": "Home", "t": 33.5}, {"label": "Plan", "t": 44.9}, {"label": "Decisions", "t": 57.7}, {"label": "Schedule", "t": 67.4}, {"label": "Guests", "t": 75.8}, {"label": "RSVPs", "t": 93.3}, {"label": "Money", "t": 108.2}, {"label": "Vendors", "t": 118.8}, {"label": "Share or print", "t": 127.6}, {"label": "You’re ready", "t": 139.7}];
 function stopVideo() { const v = document.getElementById('tourv'); if (v) v.pause(); }
 function wireVideo(play) {
   const v = document.getElementById('tourv'); if (!v) return;
@@ -1486,7 +1508,7 @@ function settingsSheet(focusId) {
   <div class="sect">Smart Steps</div>
   <div class="autos">${AUTOS.map(a => sw('auto', a)).join('')}</div>
   <div class="sect">Help</div>
-  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the App Tour</b><span>Narrated video · 6:33</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter Steps and Common Questions</span></span><span class="go">Open</span></button></div>
+  <div class="steps"><button data-act="help-play"><span class="n">${I.play.replace('<svg', '<svg width="12" height="12"')}</span><span class="tx"><b>Replay the App Tour</b><span>Narrated video · 2:28</span></span><span class="go">Play</span></button><button data-act="help"><span class="n">?</span><span class="tx"><b>Info Center</b><span>Starter Steps and Common Questions</span></span><span class="go">Open</span></button></div>
   <div class="sect">Reminders</div>
   <div class="note" style="margin-top:-4px">Put every upcoming task, payment and wedding-day time on your phone's calendar, with alerts. Payments remind you three days early. Run it again after big changes.</div>
   <button class="btn alt" data-act="ics">${I.cal} Add Dates to My Calendar</button>
@@ -1515,7 +1537,7 @@ function helpSheet(play) {
   const autos = AUTOS; void [['q', 'Decisions to Tasks', 'When a question is marked Decided, its next step becomes a task.'], ['vendor', 'Deposit Reminders', 'When a vendor\'s contract is signed, a "pay the deposit" task is added, due in a week.'], ['gift', 'Thank-You Reminders', 'When a gift is logged, a thank-you note task is added.'], ['thanks', 'Auto Check-Off', 'When you mark a thank-you as sent, its task is checked off.']];
   sheet(`<div class="help-hd"><h4>Info Center</h4><button class="iconbtn" data-close="1" aria-label="Close">×</button></div>
   <div class="vwrap"><video id="tourv" src="tour.mp4" poster="tour-poster.jpg" controls playsinline preload="metadata" aria-label="Screen recording tour of the app"></video></div>
-  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (6:33). Turn your sound on, and tap a chapter to jump to it.</div>
+  <div class="note" style="margin-top:-6px">A narrated tour of the app with real wedding data (2:28). Turn your sound on, and tap a chapter to jump to it.</div>
   <div class="opts">${CHAPTERS.map(c => `<button class="chip" data-act="vchap" data-t="${c.t}" aria-pressed="false">${c.label}</button>`).join('')}</div>
   <div class="sect">Starter Steps</div>
   <div class="steps">${steps.map(([a, b, tab, sub], k) => `<button data-act="hgo" data-tab="${tab}" data-sub="${sub}"><span class="n">${k + 1}</span><span class="tx"><b>${a}</b><span>${b}</span></span><span class="go">Go</span></button>`).join('')}</div>
@@ -1895,6 +1917,7 @@ document.addEventListener('click', e => {
   if (ds.act === 'reachsave') return reachSave();
   if (ds.act === 'reachanyway') { UI.reachOk = true; closeSheet(); return contactAction(ds.a, ds.ck); }
   if (ds.act === 'quietday') { const n = S.people.filter(p => ['Bride', 'Groom'].includes(p['Individual Role'])); n.forEach(p => { const k = reachName(p.Name); S.reach[k] = { ...(S.reach[k] || { mode: 'any' }), off: true }; }); save(); toast(n.length ? `${n.map(p => firstName(p.Name)).join(' & ')} are off-limits on the wedding day` : 'Add the bride and groom to the guest list first'); return settingsSheet(); }
+  if (ds.act === 'sheetback') return sheetBack();
   if (ds.act === 'impmode') { PENDING.mode = ds.v; return importSheet(); }
   if (ds.act === 'impgo') return PENDING?.mode === 'replace' ? confirmBox('Replace Everything?', 'Everything in the app is swapped for what’s in this Excel file. Tabs left blank in the file are cleared too.', 'Replace', applyImport) : applyImport();
   if (ds.act === 'savesettings') return saveSettings();
@@ -1956,6 +1979,9 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet()
 function fromHash() { const h = location.hash.slice(1); UI.tab = TABS.some(t => t[0] === h) ? h : 'home'; render(); }
 addEventListener('hashchange', fromHash);
 fromHash();
+
+/* let each sheet opener record itself so Back can reopen it */
+for (const n of ["rowForm", "tableSheet", "searchSheet", "callSheet", "dndSheet", "reachSheet", "contactSheet", "mapSheet", "composeSheet", "repliesSheet", "guestSheet", "guestForm", "vendorSheet", "vendorForm", "taskForm", "payForm", "settingsSheet", "helpSheet", "shareSheet", "importSheet"]) { const f = window[n]; if (typeof f !== 'function') continue; window[n] = function (...args) { SH_OPEN = (SH_OPEN && SH_OPEN.back && SH_OPEN.fn === n) ? SH_OPEN : { fn: n, args }; return f.apply(this, args); }; }
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
