@@ -562,6 +562,57 @@ body.gated { overflow: hidden; }
 #gate .spin { width: 20px; height: 20px; border-radius: 50%; border: 3px solid var(--blush); border-top-color: var(--plum); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .invcode { font: 600 34px var(--body); letter-spacing: .18em; text-align: center; color: var(--deep); background: var(--surface); border: 1px dashed var(--mauve); border-radius: 14px; padding: 16px 8px; }
+
+/* ===== polish pass: comfortable touch targets, readable small text, calmer motion ===== */
+button, a, select, label, summary { touch-action: manipulation; }
+button, .tab, .chip, .pill, .segbar, summary { -webkit-user-select: none; user-select: none; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body:has(#layer .scrim) { overflow: hidden; }
+.sheet { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+/* touch targets: 40px or more to press, 44px hit area where the control stays visually small */
+.segbar button { min-height: 40px; }
+.segbar.small button { min-height: 36px; }
+.chip { min-height: 36px; display: inline-flex; align-items: center; gap: 4px; }
+.opts .chip { min-height: 34px; }
+.btn.sm { min-height: 36px; }
+.sel { min-height: 36px; }
+.addpill { height: 40px; padding: 0 16px 0 12px; }
+.iconbtn { width: 40px; height: 40px; }
+.top .iconbtn, .sheet .iconbtn, .more, .switch, .sback, .link { position: relative; }
+.top .iconbtn::after, .sheet .iconbtn::after, .switch::before, .sback::after { content: ""; position: absolute; inset: -6px; }
+.more::after, .link::after { content: ""; position: absolute; inset: -12px -8px; }
+.sheet .sback { height: 34px; padding: 0 14px 0 8px; }
+.loosechips button { min-height: 36px; }
+/* small text: nothing under 11px, and labels dark enough to read outdoors */
+.tab { font-size: 11px; }
+.pill { font-size: 11px; padding: 3px 9px; }
+.grp, .sect, .top .eyebrow { font-size: 11px; }
+.top .eyebrow { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sect, .grp { color: var(--label); }
+.date span, .date small { font-size: 10px !important; }
+.glance .l, .tile .l { font-size: 10.5px; }
+.kv button.link.add, .link.add { color: var(--plum); }
+.money-sum .l { font-size: 10.5px; }
+.rsvpbar .btn { min-height: 40px; }
+.note { line-height: 1.5; }
+.top .hsub { text-wrap: balance; }
+.card h3, .sheet h4, .row .t { text-wrap: pretty; }
+/* press feedback everywhere something can be tapped */
+.row button.main, .loosechips button, .segbar button, .more, .link, .sel, .faq summary, .steps button { -webkit-tap-highlight-color: transparent; transition: opacity .15s, background-color .15s, transform .12s; }
+.row button.main:active, .more:active, .link:active { opacity: .55; }
+.loosechips button:active, .segbar button:active { transform: scale(.97); }
+.check:active { transform: scale(.88); }
+.check.on svg { animation: pop .22s ease; }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.15); } }
+/* sheets: slide away instead of vanishing, and no re-animation when a sheet only refreshes */
+.scrim.noanim, .scrim.noanim .sheet { animation: none; }
+.scrim.leaving { animation: fadeout .18s ease forwards; pointer-events: none; }
+.scrim.leaving .sheet { animation: down .18s ease forwards; }
+@keyframes fadeout { to { background: rgba(63,42,41,0); } }
+@keyframes down { to { transform: translateY(40px); opacity: 0; } }
+/* risks read as one line of meaning rather than three badges */
+.riskmeta { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.riskmeta b { color: var(--alert); font-weight: 600; }
 </style>
 
 <div class="app" id="app">
@@ -639,7 +690,7 @@ if (!S.reach) S.reach = S.own ? {} : clone(EX_REACH);
 try { navigator.storage?.persist?.(); } catch (e) {}
 for (const [k, v] of Object.entries({ rsvpBy: '', rsvpLink: '', meals: 'Chicken, Beef, Fish, Vegetarian', pemail: '', paddr: '', demail: '', daddr: '' })) if (S.details[k] == null) S.details[k] = v;
 S.vendors.forEach(v => { if (v.Website == null) v.Website = (DATA.Vendors.r.find(r => r[1] === v.Company) || [])[DATA.Vendors.h.indexOf('Website')] || ''; if (v.Address == null) v.Address = (DATA.Vendors.r.find(r => r[1] === v.Company) || [])[DATA.Vendors.h.indexOf('Address')] || ''; });
-function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} if (typeof CLOUD !== 'undefined' && CLOUD.wid) cloudQueue(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { if (!save.warned) { save.warned = true; setTimeout(() => toast('This phone is out of storage, so new changes may not be kept. Download Excel in Settings to keep a copy.'), 50); } } if (typeof CLOUD !== 'undefined' && CLOUD.wid) cloudQueue(); }
 
 const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
 const D = s => { if (!s) return null; const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
@@ -887,7 +938,8 @@ function renderPlan() {
     ${q.taskMade ? `<button class="btn alt sm" data-go="plan" data-sub="tasks" data-filter="open">${I.spark} Task created</button>` : `<div class="note">${S.auto.q ? 'Pick <b>Decided</b> and the next step is added to your tasks.' : ''}</div>`}</div>
     ${next && !q.taskMade ? `<div class="note"><b style="color:var(--ink)">Next step:</b> ${esc(next)}</div>` : ''}<button class="link" data-act="qedit" data-i="${i}" style="justify-self:start;font-size:13px">Edit Question</button></div>` : ''}`; }).join('')}`).join('') || `<div class="empty">${UI.qf === 'now' ? 'Nothing to decide right now.' : 'Nothing here yet.'}</div>`}</section>`;
   } else if (sub === 'risks') {
-    body = `<section class="card flush">${S.risks.map((r, ri) => `<button class="row" data-row="risks:${ri}"><div class="main"><div class="t" style="white-space:normal">${esc(r.Risk)}</div><div class="m" style="white-space:normal">${esc(r.Notes)}</div></div><div class="end" style="display:grid;gap:4px;justify-items:end"><span class="pill ${r.Impact === 'High' ? 'red' : 'soft'}">Impact ${esc(r.Impact)}</span><span class="pill ${r.Probability === 'High' ? 'red' : 'soft'}">Odds ${esc(r.Probability)}</span><span class="pill ${r.Status === 'Open' ? 'rose' : ''}">${esc(r.Status)}</span></div></button>`).join('')}</section>`;
+    const rk = S.risks.map((r, ri) => [r, ri]).sort((a, b) => (a[0].Status === 'Open' ? 0 : 1) - (b[0].Status === 'Open' ? 0 : 1) || (b[0].Impact === 'High') + (b[0].Probability === 'High') - (a[0].Impact === 'High') - (a[0].Probability === 'High'));
+    body = `<section class="card flush">${rk.map(([r, ri]) => { const hot = r.Status === 'Open' && r.Impact === 'High' && r.Probability === 'High'; return `<button class="row" data-row="risks:${ri}"><div class="main"><div class="t" style="white-space:normal">${esc(r.Risk)}</div><div class="riskmeta">${r.Impact === 'High' ? '<b>High impact</b>' : esc(r.Impact || '') + ' impact'} · ${r.Probability === 'High' ? '<b>likely</b>' : r.Probability === 'Low' ? 'unlikely' : 'possible'}</div>${r.Notes ? `<div class="m" style="white-space:normal">${esc(r.Notes)}</div>` : ''}</div><span class="pill ${hot ? 'red' : r.Status === 'Open' ? 'rose' : ''}">${hot ? 'Needs a Plan' : esc(r.Status)}</span></button>`; }).join('') || '<div class="empty">No risks listed yet.</div>'}</section>`;
   } else if (sub === 'photos') {
     const by = {}; S.photos.forEach((p, i) => (by[p['Shot Category']] = by[p['Shot Category']] || []).push([p, i]));
     body = `<section class="card flush">${Object.entries(by).map(([c, ps]) => `<div class="grp">${esc(c)}</div>${ps.map(([p, i]) => `<div class="row ${p.Captured === 'Yes' ? 'isdone' : ''}"><button class="check sq ${p.Captured === 'Yes' ? 'on' : ''}" data-photo="${i}" aria-label="Captured">${I.check}</button><button class="main" data-row="photos:${i}"><div class="t" style="white-space:normal">${esc(p['Shot Description'])}</div><div class="m">${esc(p.Location)}</div></button>${['High', 'Urgent'].includes(p.Priority) ? '<span class="pill rose">Must-Have</span>' : ''}</div>`).join('')}`).join('')}</section>`;
@@ -930,7 +982,7 @@ function renderGuests() {
     body = `<section class="card flush"><div class="sh"><h3>Hotel Rooms</h3><span class="note">${S.lodging.filter(l => l.Status === 'Confirmed').length}/${S.lodging.length} confirmed</span></div>${S.lodging.map((l, li) => `<button class="row" data-row="lodging:${li}"><div class="main"><div class="t">${esc(l.Guest)}</div><div class="m">${esc(l.Hotel)}${l.Confirmation ? ' · #' + esc(l.Confirmation) : ''}</div></div><span class="pill ${l.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(l.Status)}</span></button>`).join('') || '<div class="empty">No hotel rooms yet.</div>'}<button class="addrow" data-act="addrow" data-k="lodging">${I.plus} Add Hotel Room</button></section>
     <section class="card flush"><div class="sh"><h3>Rides</h3><span class="note">${S.rides.filter(l => l.Status === 'Confirmed').length}/${S.rides.length} confirmed</span></div>${S.rides.map((r, ri) => `<button class="row" data-row="rides:${ri}"><div class="date" style="width:58px"><b style="font-size:14px">${time12(r.Time).replace(' ', '')}</b></div><div class="main"><div class="t" style="white-space:normal">${esc(r.Service)}</div><div class="m">${esc(r.Vendor)}</div></div><span class="pill ${r.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(r.Status)}</span></button>`).join('') || '<div class="empty">No rides yet.</div>'}<button class="addrow" data-act="addrow" data-k="rides">${I.plus} Add Ride</button></section>`;
   }
-  return { eyebrow: `${s.acc} accepted · ${s.inv} awaiting`, title: 'Guests', act: UI.guests === 'list' ? hdrBtn('share', I.share, 'Share or Print the Guest List', 'data-kind="guests"') : UI.guests === 'seating' ? hdrBtn('share', I.share, 'Share or Print the Seating Chart', 'data-kind="seating"') : hdrBtn('share', I.share, 'Share or Print Hotels and Rides', 'data-kind="stay"'), fab: UI.guests === 'list' ? ['addguest', 'Guest'] : null, tabs: segbar('guests', [['list', 'Guest List'], ['seating', 'Seating'], ['stay', 'Hotels & Rides']]), tools: UI.guests === 'list' ? guestTools() : '', html: body };
+  return { eyebrow: `${s.acc} yes · ${s.inv} awaiting`, title: 'Guests', act: UI.guests === 'list' ? hdrBtn('share', I.share, 'Share or Print the Guest List', 'data-kind="guests"') : UI.guests === 'seating' ? hdrBtn('share', I.share, 'Share or Print the Seating Chart', 'data-kind="seating"') : hdrBtn('share', I.share, 'Share or Print Hotels and Rides', 'data-kind="stay"'), fab: UI.guests === 'list' ? ['addguest', 'Guest'] : null, tabs: segbar('guests', [['list', 'Guest List'], ['seating', 'Seating'], ['stay', 'Hotels & Rides']]), tools: UI.guests === 'list' ? guestTools() : '', html: body };
 }
 
 /* ---------- MONEY ---------- */
@@ -1110,6 +1162,7 @@ function sheet(html) {
   const title = (html.match(/<h4[^>]*>([^<]*)/) || [])[1] || 'Details', open = layer.innerHTML !== '' && layer.querySelector('.sheet');
   if (!open) { SH_STACK = []; SH_CUR = null; }
   const o = SH_OPEN; SH_OPEN = null;
+  const sameSheet = !o || (!!SH_CUR && shKey(SH_CUR) === shKey(o));
   if (o) {
     const k = shKey(o), at = SH_STACK.findIndex(x => shKey(x) === k);
     if (at >= 0) SH_STACK.length = at;
@@ -1118,12 +1171,20 @@ function sheet(html) {
   } else if (SH_CUR) SH_CUR.title = title;
   const prev = SH_STACK[SH_STACK.length - 1], dest = prev ? prev.title : ((TABS.find(t => t[0] === UI.tab) || [])[1] || 'Back');
   const back = `<div class="shead"><button class="sback" data-act="sheetback" aria-label="Back to ${esc(dest)}"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg><span>${esc(dest)}</span></button><div class="grab"></div></div>`;
-  layer.innerHTML = `<div class="scrim" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">${back}${html}</div></div>`; const sh = layer.querySelector('.sheet'); sh.tabIndex = -1; sh.focus({ preventScroll: true }); sh.scrollTop = 0; }
+  const refresh = open && (!o || o.back !== true) && sameSheet, keepTop = refresh ? open.scrollTop : 0;
+  document.querySelectorAll('.scrim.leaving').forEach(x => x.remove());
+  layer.innerHTML = `<div class="scrim${open ? ' noanim' : ''}" data-close="1"><div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}">${back}${html}</div></div>`;
+  if (keepTop) requestAnimationFrame(() => { const x = layer.querySelector('.sheet'); if (x) x.scrollTop = keepTop; }); const sh = layer.querySelector('.sheet'); sh.tabIndex = -1; sh.focus({ preventScroll: true }); sh.scrollTop = 0; }
 let drag = null;
 layer.addEventListener('touchstart', e => { const sh = e.target.closest('.sheet'); if (!sh || sh.scrollTop > 0 || e.target.closest('input,textarea,select,video')) return; drag = { sh, y: e.touches[0].clientY, dy: 0 }; }, { passive: true });
 layer.addEventListener('touchmove', e => { if (!drag) return; drag.dy = Math.max(0, e.touches[0].clientY - drag.y); if (drag.dy > 4) { drag.sh.classList.add('dragging'); drag.sh.style.transform = `translateY(${drag.dy}px)`; } }, { passive: true });
 layer.addEventListener('touchend', () => { if (!drag) return; const { sh, dy } = drag; drag = null; sh.classList.remove('dragging'); if (dy > 110) { sh.style.transform = 'translateY(100%)'; setTimeout(closeSheet, 180); } else sh.style.transform = ''; });
-function closeSheet() { stopVideo(); layer.innerHTML = ''; SH_STACK = []; SH_CUR = null; SH_OPEN = null; }
+function closeSheet() {
+  stopVideo(); const sc = layer.querySelector('.scrim');
+  if (sc && !matchMedia('(prefers-reduced-motion: reduce)').matches) { const g = sc.cloneNode(true); g.classList.remove('noanim'); g.classList.add('leaving'); g.removeAttribute('data-close'); g.setAttribute('aria-hidden', 'true'); g.querySelectorAll('[id]').forEach(x => x.removeAttribute('id')); g.querySelectorAll('video').forEach(v => v.remove()); const st = sc.querySelector('.sheet').scrollTop; document.body.appendChild(g); g.querySelector('.sheet').scrollTop = st; setTimeout(() => g.remove(), 190); }
+  layer.innerHTML = ''; SH_STACK = []; SH_CUR = null; SH_OPEN = null;
+}
+const buzz = () => { try { navigator.vibrate && navigator.vibrate(8); } catch (e) {} };
 function toast(msg, action) { document.querySelectorAll('.toast').forEach(x => x.remove()); const t = document.createElement('div'); t.className = 'toast' + (layer.innerHTML ? ' up' : ''); t.setAttribute('role', 'status'); const sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
   if (action) { const b = document.createElement('button'); b.textContent = action.label; b.onclick = () => { t.remove(); action.fn(); }; t.appendChild(b); }
   document.body.appendChild(t); setTimeout(() => t.remove(), action ? 4500 : 2400); }
@@ -1387,7 +1448,7 @@ function guestSheet(i) {
   </div>
   <button class="btn alt" data-close="1">Done</button>`);
 }
-const fld = (id, label, val, type = 'text', extra = '') => `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val ?? '')}" ${extra}></div>`;
+const fld = (id, label, val, type = 'text', extra = '') => `<div class="field"><label for="${id}">${label}</label><input id="${id}" type="${type}" value="${esc(val ?? '')}" enterkeyhint="done" ${extra}></div>`;
 const fsel = (id, label, list, cur) => `<div class="field"><label for="${id}">${label}</label><select id="${id}">${opt(list, cur)}</select></div>`;
 function guestForm(i) {
   const isNew = i == null, p = isNew ? { Side: 'Bride', Relationship: 'Friend', 'Individual Role': 'Guest' } : S.people[i];
@@ -1543,10 +1604,11 @@ function settingsSheet(focusId) {
   <div class="two">${f('wd', 'Wedding Date', d.wd, 'date')}${f('time', 'Ceremony Time', d.time, 'time')}</div>
   ${f('venue', 'Venue', d.venue)}
   ${f('street', 'Venue Street Address', d.street, 'text', 'autocomplete="off"')}
-  <div class="two">${f('city', 'City, state, ZIP', d.city)}${f('eng', 'Engaged on', d.eng, 'date')}</div>
-  ${f('target', 'Guest Count Goal', d.target, 'number', 'min="0" inputmode="numeric"')}
+  ${f('city', 'City, state, ZIP', d.city)}
+  <div class="two">${f('eng', 'Engaged on', d.eng, 'date')}${f('target', 'Guest Count Goal', d.target, 'number', 'min="0" inputmode="numeric"')}</div>
   <div class="sect">RSVPs</div>
-  <div class="two">${f('rsvpBy', 'Reply by', d.rsvpBy, 'date')}${f('meals', 'Meal Choices', d.meals, 'text', 'placeholder="Chicken, Beef, Fish"')}</div>
+  ${f('rsvpBy', 'Reply by', d.rsvpBy, 'date')}
+  ${f('meals', 'Meal Choices', d.meals, 'text', 'placeholder="Chicken, Beef, Fish"')}
   ${f('rsvpLink', 'RSVP website (optional)', d.rsvpLink, 'url', 'placeholder="https://…" autocomplete="off"')}
   <div class="note" style="margin-top:-6px">Have an RSVP page on Zola, The Knot or your own site? Paste it and it goes in every RSVP message. Leave it blank and guests simply reply YES or NO with their meal.</div>
   <div class="sect">Key Contacts</div>
@@ -1947,7 +2009,7 @@ document.addEventListener('click', e => {
   if (ds.seg) { UI[ds.seg] = ds.val; return render(); }
   if (ds.pf) { UI.planFilter = ds.pf; return render(); }
   if (ds.gf) { UI.gFilter = ds.gf; return render(); }
-  if (ds.task) {
+  if (ds.task) { buzz();
     const k = S.tasks[+ds.task], prev = k.Status, prevOn = k.doneOn, finishing = OPEN(k);
     if (finishing) { k.prevStatus = prev; k.Status = 'Completed'; k.doneOn = iso(TODAY); } else { k.Status = k.prevStatus && OPEN({ Status: k.prevStatus }) ? k.prevStatus : 'Not Started'; k.doneOn = ''; }
     save(); const undo = { label: 'Undo', fn: () => { k.Status = prev; k.doneOn = prevOn; save(); render(); } };
@@ -1955,10 +2017,10 @@ document.addEventListener('click', e => {
     return toast(finishing ? 'Done! Moved to Completed.' : 'Task moved back to your to-do list.', undo);
   }
   if (ds.row) { const [k, i] = ds.row.split(':'); return rowForm(k, +i); }
-  if (ds.pack) { const k = S.packing[+ds.pack]; k.Packed = k.Packed === 'Yes' ? 'No' : 'Yes'; save(); return render(); }
+  if (ds.pack) { const k = S.packing[+ds.pack]; k.Packed = k.Packed === 'Yes' ? 'No' : 'Yes'; buzz(); save(); return render(); }
   if (ds.table) return tableSheet(ds.table);
-  if (ds.photo) { const k = S.photos[+ds.photo]; k.Captured = k.Captured === 'Yes' ? 'No' : 'Yes'; save(); return render(); }
-  if (ds.pay) { const k = S.payments[+ds.pay]; k.Status = 'Paid'; k['Paid On'] = TODAY.toISOString().slice(0, 10); save(); toast(`${money(k.Amount)} to ${k.Vendor} marked paid`); return render(); }
+  if (ds.photo) { const k = S.photos[+ds.photo]; k.Captured = k.Captured === 'Yes' ? 'No' : 'Yes'; buzz(); save(); return render(); }
+  if (ds.pay) { const k = S.payments[+ds.pay], was = [k.Status, k['Paid On']]; k.Status = 'Paid'; k['Paid On'] = iso(TODAY); buzz(); save(); toast(`${money(k.Amount)} to ${k.Vendor} marked paid`, { label: 'Undo', fn: () => { k.Status = was[0]; k['Paid On'] = was[1]; save(); render(); } }); return render(); }
   if (ds.call) { e.preventDefault(); return callSheet(ds.name || '', ds.call); }
   if (ds.copy) return copy(ds.copy, ds.label || 'Text');
   if (ds.guest) return guestSheet(+ds.guest);
@@ -2041,7 +2103,12 @@ document.addEventListener('change', e => {
   const p = S.people[+ds.edit]; p[ds.field] = ds.field === 'Table' ? (t.value ? +t.value : '') : t.value; guestChanged(p, ds.field); save(); render(); if (ds.field === 'Table' && t.classList.contains('tsel')) toast(t.value ? `${p.Name.split(' ')[0]} → Table ${t.value}` : `${p.Name.split(' ')[0]} unseated`);
 });
 document.addEventListener('input', e => { if (e.target.id === 'gs') return searchResults(e.target.value); if (e.target.id === 'vf-tip') return; if (e.target.id === 'q') { UI.q = e.target.value; const pos = e.target.selectionStart; render(); const q = document.getElementById('q'); q.focus(); q.setSelectionRange(pos, pos); } });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') return closeSheet();
+  if (e.key === 'Enter' && e.target.matches && e.target.matches('.sheet input:not([type=file])') && !e.isComposing) { const b = e.target.closest('.sheet').querySelector('.btn.plum[data-act^="save"]'); if (b) { e.preventDefault(); e.target.blur(); b.click(); } }
+});
+/* another tab or window changed the plan: pick it up rather than overwrite it */
+addEventListener('storage', e => { if (e.key !== KEY || !e.newValue || (typeof CLOUD !== 'undefined' && CLOUD.wid)) return; try { S = JSON.parse(e.newValue); if (!layer.innerHTML) render(); } catch (x) {} });
 function fromHash() { const h = location.hash.slice(1); UI.tab = TABS.some(t => t[0] === h) ? h : 'home'; render(); }
 addEventListener('hashchange', fromHash);
 fromHash();
