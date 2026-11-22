@@ -1,6 +1,6 @@
 # Stationery catalog
 
-The Stationery tab is read-only. Users cannot add or edit items in the app.
+Stationery (under Vendors) is read-only. Users cannot add or edit items in the app.
 Items are added here, in `catalog.json`, and built into the app.
 
 While a category has no items, the app shows 3 empty "coming soon" slots for it.

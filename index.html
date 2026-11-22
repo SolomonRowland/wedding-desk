@@ -615,8 +615,6 @@ body:has(#layer .scrim) { overflow: hidden; }
 .riskmeta b { color: var(--alert); font-weight: 600; }
 
 /* stationery */
-.tabs { grid-template-columns: repeat(6, 1fr); }
-.tab span { font-size: 10.5px; letter-spacing: -.01em; }
 .shopcats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
 .shopsh { flex-direction: column; align-items: flex-start !important; gap: 2px; }
 .shopcats .chip { min-height: 36px; padding: 0 6px; justify-content: center; text-align: center; white-space: nowrap; font-size: 12.5px; background: rgba(255,255,255,.16); color: #fff; border-color: transparent; }
@@ -635,6 +633,15 @@ body:has(#layer .scrim) { overflow: hidden; }
 .soon { font-weight: 500; color: var(--muted); font-size: 12.5px; }
 .shopbig { border-radius: 18px; overflow: hidden; margin: 2px 0 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); aspect-ratio: 1; }
 .shopprice { font: 600 17px var(--body); color: var(--deep); margin-top: 2px; }
+
+.shoplink { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; margin: 2px 0 12px; padding: 10px 14px; border-radius: 14px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); color: var(--plum); text-align: left; }
+.shoplink > svg:first-child { width: 22px; height: 22px; flex: none; }
+.shoplink span { flex: 1; display: grid; }
+.shoplink b { font: 600 14px var(--body); color: var(--ink); }
+.shoplink small { font-size: 12px; color: var(--muted); }
+.shoplink:active { background: var(--petal); }
+.shopico { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--blush); color: var(--deep); display: grid; place-items: center; }
+.shopico svg { width: 20px; height: 20px; }
 </style>
 
 <div class="app" id="app">
@@ -799,8 +806,72 @@ function stats() {
 }
 
 /* ---------- shell ---------- */
-const TABS = [['home', 'Home'], ['plan', 'Plan'], ['guests', 'Guests'], ['money', 'Money'], ['vendors', 'Vendors'], ['shop', 'Stationery']];
+const TABS = [['home', 'Home'], ['plan', 'Plan'], ['guests', 'Guests'], ['money', 'Money'], ['vendors', 'Vendors']];
 const UI = { tab: 'home', plan: 'tasks', planFilter: 'open', showDone: false, share: { scope: 'open', owner: 'Everyone' }, guests: 'list', gFilter: 'All', q: '', selecting: false, sel: new Set(), money: 'budget', vend: 'vendors', openQ: null };
+/* ---------- STATIONERY ----------
+   Read-only catalog, maintained by the owner (app/catalog.json, built in as SHOP).
+   Nothing here is stored in S, exported, or synced. */
+const SHOP = {"categories":[{"id":"save-the-dates","name":"Save the Dates","for":"Mail 6 to 8 months before the wedding"},{"id":"invitations","name":"Invitations","for":"Mail 6 to 8 weeks before the wedding"},{"id":"day-of","name":"Day-Of Paper","for":"Programs, menus and place cards"},{"id":"signs","name":"Signs","for":"Welcome, seating and bar signs"},{"id":"favors","name":"Favors & Gifts","for":"Tags, labels and wedding party gifts"},{"id":"thank-you","name":"Thank-You Cards","for":"Send within 3 months of the wedding"}],"items":[]};
+const SHOP_SLOTS = 3;
+UI.shop = UI.shop || 'all';
+const shopMoney = v => v === '' || v == null || isNaN(+v) ? '' : '$' + (+v % 1 ? (+v).toFixed(2) : String(+v));
+const shopCat = id => SHOP.categories.find(c => c.id === id) || { id, name: id };
+function shopItems(cat) {
+  const real = SHOP.items.filter(it => it.category === cat && it.active !== false).sort((a, b) => (a.sort || 0) - (b.sort || 0));
+  if (real.length) return real;
+  return Array.from({ length: SHOP_SLOTS }, (_, n) => ({ id: `${cat}-slot-${n + 1}`, category: cat, slot: true, name: `${shopCat(cat).name.replace(/s$/, '')} Option ${n + 1}`, description: 'Photo, description and price will appear here.', unit: 'each' }));
+}
+
+const SHOP_MATCH = [['save-the-dates', /save.the.dates?/i], ['invitations', /invitation|reply card|rsvp card/i], ['day-of', /programs?\b|place cards?|escort cards?|menu cards?/i], ['signs', /signage|welcome sign|seating chart|bar sign/i], ['favors', /\bfavou?rs?\b|bridesmaid proposal/i], ['thank-you', /thank.you cards?/i]];
+const SHOP_QMATCH = [['save-the-dates', /save-the-dates/i], ['day-of', /escort cards/i], ['favors', /^Is there a favor/i], ['thank-you', /thank-you cards go out/i]];
+const shopFor = (txt, list = SHOP_MATCH) => { const m = list.find(([, re]) => re.test(String(txt || ''))); return m ? m[0] : null; };
+const shopLink = cat => cat ? `<button class="shoplink" data-shopgo="${cat}">${I.shop}<span><b>Browse ${esc(shopCat(cat).name)}</b><small>in Stationery</small></span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>` : '';
+function shopHomeCard() {
+  const hits = S.tasks.filter(t => OPEN(t) && t['Due Date'] && days(t['Due Date']) <= 45).map(t => [t, shopFor(t.Task)]).filter(([, c]) => c && c !== 'thank-you').sort((a, b) => a[0]['Due Date'].localeCompare(b[0]['Due Date']));
+  if (!hits.length) return '';
+  const [t, c] = hits[0], n = days(t['Due Date']);
+  return `<section class="card flush shophome"><button class="row" data-shopgo="${c}"><span class="shopico">${I.shop}</span><div class="main"><div class="t">Browse ${esc(shopCat(c).name)}</div><div class="m">For “${esc(t.Task)}” · ${n < 0 ? 'past due' : n === 0 ? 'due today' : `due in ${n} day${n === 1 ? '' : 's'}`}</div></div><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--mauve);flex:none"><path d="M9 6l6 6-6 6"/></svg></button></section>`;
+}
+const shopAll = () => SHOP.categories.flatMap(c => shopItems(c.id));
+const shopPhoto = (it, big) => it.image ? `<img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy">` : `<span class="shopph">${I.shop}${big ? '<b>Photo coming soon</b>' : ''}</span>`;
+const shopPrice = it => it.slot ? '<span class="soon">Price coming soon</span>' : `${it.from ? 'from ' : ''}${shopMoney(it.price)} <small>${esc(it.unit || 'each')}</small>`;
+function renderShop() {
+  const cats = SHOP.categories.filter(c => UI.shop === 'all' || UI.shop === c.id);
+  const row = it => `<div class="row shoprow"><button class="main" data-shopitem="${esc(it.id)}"><span class="shopthumb">${shopPhoto(it)}</span><span class="stx"><span class="t">${esc(it.name)}</span><span class="m">${esc(it.description || '')}</span><span class="price">${shopPrice(it)}</span></span></button>${it.slot ? '<span class="pill soft">Soon</span>' : `<button class="btn sm alt" data-shopbuy="${esc(it.id)}" aria-label="Order ${esc(it.name)}">Order</button>`}</div>`;
+  const body = cats.map(c => { const items = shopItems(c.id); return `<section class="card flush"><div class="sh shopsh"><h3>${esc(c.name)}</h3>${c.for ? `<span class="note">${esc(c.for)}</span>` : ''}</div>${items.map(row).join('')}</section>`; }).join('');
+  const live = SHOP.items.filter(i => i.active !== false).length;
+  const chips = SHOP.categories.map(c => `<button class="chip" data-shopcat="${c.id}" aria-pressed="${UI.shop === c.id}">${esc(c.name)}</button>`).join('');
+  return { eyebrow: live ? `${live} item${live === 1 ? '' : 's'} · Paper for your day` : 'Paper for your day', title: 'Stationery', act: '', tabs: `<div class="shopcats" role="group" aria-label="Stationery categories. Tap again to show all.">${chips}</div>`, html: body + (live ? '' : '<p class="note" style="text-align:center;padding:4px 28px 10px">New pieces are on the way. Check back soon.</p>') };
+}
+function shopQty(it) {
+  if (!it.per || it.per === 'order') return null;
+  const g = +S.details.target || S.people.length; if (!g) return null;
+  const n = Math.max(it.per === 'guest' ? g : Math.ceil(g / 2), +it.min || 0);
+  return [n, it.per === 'guest' ? 'guests' : 'invitations (about one per couple or family)'];
+}
+function shopSheet(id) {
+  const it = shopAll().find(x => x.id === id) || SHOP.items.find(x => x.id === id); if (!it) return;
+  const q = !it.slot && it.price ? shopQty(it) : null, dash = '<span class="soon">Coming soon</span>';
+  const kv = [['Category', esc(shopCat(it.category).name)], ['Best for', it.for ? esc(it.for) : dash], ...(it.options || []).map(o => [esc(o.name), esc((o.choices || []).join(', '))]), ['Minimum order', it.min ? esc(String(it.min)) : (it.slot ? dash : 'None')], ['Proof', it.proof ? esc(it.proof) : dash], ['Delivery', it.delivery ? esc(it.delivery) : dash], ...(q ? [[`For ${q[0]} ${q[1]}`, `about ${shopMoney(Math.round(q[0] * it.price))}`]] : [])];
+  sheet(`<div class="shopbig">${shopPhoto(it, true)}</div><h4>${esc(it.name)}</h4><div class="shopprice">${shopPrice(it)}</div>${it.description ? `<p class="note" style="margin:6px 0 12px">${esc(it.description)}</p>` : ''}
+  <div class="kv">${kv.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
+  ${it.slot || !it.checkout ? `<button class="btn plum" disabled style="margin-top:14px;opacity:.55">Available Soon</button>` : `<button class="btn plum" data-shopbuy="${esc(it.id)}" style="margin-top:14px">${I.lock || ''}Order Securely</button><p class="note" style="text-align:center;margin-top:10px">Checkout opens in a secure Stripe page. Add your names and date there.</p>`}`);
+}
+function shopBuy(id) {
+  const it = SHOP.items.find(x => x.id === id);
+  if (!it || !it.checkout) return toast('This piece is not available to order yet.');
+  let u; try { u = new URL(it.checkout); } catch (e) { return toast('This piece is not available to order yet.'); }
+  if (u.protocol !== 'https:' || !/(^|\.)stripe\.com$/.test(u.hostname)) return toast('This piece is not available to order yet.');
+  u.searchParams.set('client_reference_id', ('wd_' + it.id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200));
+  buzz(); window.open(u.href, '_blank', 'noopener');
+}
+document.addEventListener('click', e => {
+  const g = e.target.closest('[data-shopgo]'); if (g) { e.stopPropagation(); closeSheet(); UI.shop = g.dataset.shopgo; go('vendors', 'stationery'); return scrollTo(0, 0); }
+  const c = e.target.closest('[data-shopcat]'); if (c) { e.stopPropagation(); UI.shop = UI.shop === c.dataset.shopcat ? 'all' : c.dataset.shopcat; render(); return scrollTo(0, 0); }
+  const o = e.target.closest('[data-shopitem]'); if (o) { e.stopPropagation(); return shopSheet(o.dataset.shopitem); }
+  const b = e.target.closest('[data-shopbuy]'); if (b) { e.stopPropagation(); return shopBuy(b.dataset.shopbuy); }
+}, true);
+
 const view = document.getElementById('view');
 function go(tab, sub, filter) {
   UI.tab = tab; if (sub) UI[tab === 'vendors' ? 'vend' : tab] = sub; if (filter) UI.planFilter = filter; UI.selecting = false; UI.sel.clear();
@@ -818,7 +889,7 @@ function confirmBox(title, msg, ok, fn) {
 }
 function render() {
   document.getElementById('tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-go="${k}" ${UI.tab === k ? 'aria-current="page"' : ''}>${I[k]}<span>${l}</span><i class="dot"></i></button>`).join('');
-  const r = { home: renderHome, plan: renderPlan, guests: renderGuests, money: renderMoney, vendors: renderVendors, shop: renderShop }[UI.tab]();
+  const r = { home: renderHome, plan: renderPlan, guests: renderGuests, money: renderMoney, vendors: renderVendors }[UI.tab]();
   const top = document.getElementById('top'); top.className = 'top' + (UI.tab === 'home' ? ' home' : '');
   const pill = r.fab && ADD_STYLE === 'pill' && !UI.selecting ? `<button class="addpill" data-act="${r.fab[0]}" ${r.fab[2] ? `data-k="${r.fab[2]}"` : ''} aria-label="Add ${r.fab[1]}">${I.plus}Add</button>` : '';
   const act = UI.tab === 'home' ? hdrBtn('search', I.search, 'Search Everything') + hdrBtn('help', I.help, 'Info Center') + hdrBtn('settings', I.gear, 'Settings') : (r.act || '') + pill;
@@ -882,6 +953,7 @@ function renderHome() {
     <button data-go="plan" data-sub="tasks" data-filter="open"><span class="l">Tasks</span><span class="v num">${Math.round(s.done / (s.counted || 1) * 100)}%</span><span class="s">${s.done} done</span></button>
   </section>
   ${cheer ? `<div class="cheer">${cheer}</div>` : ''}
+  ${shopHomeCard()}
   <div class="morehd"><span>A Little More Detail</span></div>
   <section class="card flush">
     <div class="sh"><h3>Payments Coming Up</h3><button class="more" data-go="money" data-sub="payments">All Payments</button></div>
@@ -956,7 +1028,7 @@ function renderPlan() {
     body = `<section class="card"><div class="sh"><h3>Your Decisions</h3><span class="note">${done} of ${all.length} settled</span></div><div class="track" style="height:8px"><i style="width:${all.length ? done / all.length * 100 : 0}%;background:var(--deep)"></i></div>
     <div class="note">${nowN ? `<b style="color:var(--ink)">${nowN} to decide now.</b> These are the ones a coordinator would settle at this point. The rest can wait.` : S.details.wd ? 'Nothing is pressing right now. Work ahead whenever you like.' : 'Add your wedding date in Settings and each decision shows when to make it.'}</div></section>
     ${segs('qf', [['now', 'Decide Now', nowN], ['open', 'Still Open', all.length - done], ['done', 'Settled', done], ['all', 'All', all.length]])}
-    <section class="card flush">${cats.map(c => `<div class="grp">${esc(c)} · ${tot(c).filter(DONE).length}/${tot(c).length}</div>${by[c].map(([q, i]) => { const m = QM(q), next = q['Action Item'] || (m && m[1]) || ''; return `<button class="row" data-q="${i}"><div class="avatar" style="width:26px;height:26px;font-size:12px">${DONE(q) ? I.check : '?'}</div><div class="main"><div class="t" style="white-space:normal;-webkit-line-clamp:unset">${esc(q.Question)}</div>${Q_OPEN(q) && qWhen(q) ? `<div class="m">${qWhen(q)}</div>` : !Q_OPEN(q) && q.Answer ? `<div class="m" style="white-space:normal">${esc(q.Answer)}</div>` : ''}</div><span class="${pill(q.Status)}">${esc(q.Status)}</span></button>${UI.openQ === i ? `<div class="qbox">${m && m[2] ? `<div class="qtip">${I.spark}<span><b>Coordinator tip.</b> ${esc(m[2])}</span></div>` : ''}<div class="field"><label for="qa${i}">Your Answer</label><textarea id="qa${i}" data-qans="${i}" placeholder="Type your answer here">${esc(q.Answer)}</textarea></div>
+    <section class="card flush">${cats.map(c => `<div class="grp">${esc(c)} · ${tot(c).filter(DONE).length}/${tot(c).length}</div>${by[c].map(([q, i]) => { const m = QM(q), next = q['Action Item'] || (m && m[1]) || ''; return `<button class="row" data-q="${i}"><div class="avatar" style="width:26px;height:26px;font-size:12px">${DONE(q) ? I.check : '?'}</div><div class="main"><div class="t" style="white-space:normal;-webkit-line-clamp:unset">${esc(q.Question)}</div>${Q_OPEN(q) && qWhen(q) ? `<div class="m">${qWhen(q)}</div>` : !Q_OPEN(q) && q.Answer ? `<div class="m" style="white-space:normal">${esc(q.Answer)}</div>` : ''}</div><span class="${pill(q.Status)}">${esc(q.Status)}</span></button>${UI.openQ === i ? `<div class="qbox">${m && m[2] ? `<div class="qtip">${I.spark}<span><b>Coordinator tip.</b> ${esc(m[2])}</span></div>` : ''}${shopLink(shopFor(q.Question, SHOP_QMATCH))}<div class="field"><label for="qa${i}">Your Answer</label><textarea id="qa${i}" data-qans="${i}" placeholder="Type your answer here">${esc(q.Answer)}</textarea></div>
     <div class="two"><div class="field"><label for="qs${i}">Status</label><select class="sel" id="qs${i}" data-qs="${i}" style="padding:9px 26px 9px 10px">${DATA.lists['Question Status'].map(o => `<option ${q.Status === o ? 'selected' : ''}>${o}</option>`).join('')}</select></div>
     ${q.taskMade ? `<button class="btn alt sm" data-go="plan" data-sub="tasks" data-filter="open">${I.spark} Task created</button>` : `<div class="note">${S.auto.q ? 'Pick <b>Decided</b> and the next step is added to your tasks.' : ''}</div>`}</div>
     ${next && !q.taskMade ? `<div class="note"><b style="color:var(--ink)">Next step:</b> ${esc(next)}</div>` : ''}<button class="link" data-act="qedit" data-i="${i}" style="justify-self:start;font-size:13px">Edit Question</button></div>` : ''}`; }).join('')}`).join('') || `<div class="empty">${UI.qf === 'now' ? 'Nothing to decide right now.' : 'Nothing here yet.'}</div>`}</section>`;
@@ -1032,6 +1104,8 @@ function renderMoney() {
 /* ---------- VENDORS ---------- */
 function renderVendors() {
   const s = stats(); let body = '';
+  const vtabs = segbar('vend', [['vendors', 'Vendors'], ['places', 'Places'], ['rentals', 'Rentals'], ['stationery', 'Stationery']]);
+  if (UI.vend === 'stationery') { const r = renderShop(); return { ...r, eyebrow: 'Stationery · paper for your day', title: 'Vendors', tabs: vtabs + r.tabs }; }
   if (UI.vend === 'vendors') {
     const order = ['Confirmed', 'Deposit Paid', 'Contract Signed', 'Selected', 'Under Review', 'Quote Received', 'Contacted', 'Prospect', 'Cancelled'];
     const pill = st => BOOKED.includes(st) ? 'pill done' : st === 'Cancelled' ? 'pill soft' : 'pill rose';
@@ -1045,7 +1119,7 @@ function renderVendors() {
   } else {
     body = `<section class="card flush">${S.equipment.map((e, ei) => { const gap = (+e['Qty Needed'] || 0) - (+e['Qty Confirmed'] || 0); return `<button class="row" data-row="equipment:${ei}"><div class="main"><div class="t">${esc(e.Item)}</div><div class="m">${esc(e['Vendor / Source'])} · ${esc(e.Category)}</div></div><div class="end"><div class="amt num">${e['Qty Confirmed'] || 0}/${e['Qty Needed'] || 0}</div>${gap > 0 ? `<span class="pill warn">${gap} Short</span>` : `<span class="pill">${esc(e.Status)}</span>`}</div></button>`; }).join('') || '<div class="empty">No rentals yet.</div>'}</section>`;
   }
-  return { eyebrow: `${s.booked} booked`, title: 'Vendors', act: UI.vend === 'vendors' ? hdrBtn('share', I.share, 'Share or Print Vendor Contacts', 'data-kind="vendors"') : UI.vend === 'places' ? hdrBtn('share', I.share, 'Share or Print Places', 'data-kind="places"') : hdrBtn('share', I.share, 'Share or Print Rentals', 'data-kind="rentals"'), fab: UI.vend === 'vendors' ? ['addvendor', 'Vendor'] : UI.vend === 'places' ? ['addrow', 'Place', 'locations'] : ['addrow', 'Rental', 'equipment'], tabs: segbar('vend', [['vendors', 'Vendors'], ['places', 'Places'], ['rentals', 'Rentals']]), html: body };
+  return { eyebrow: `${s.booked} booked`, title: 'Vendors', act: UI.vend === 'vendors' ? hdrBtn('share', I.share, 'Share or Print Vendor Contacts', 'data-kind="vendors"') : UI.vend === 'places' ? hdrBtn('share', I.share, 'Share or Print Places', 'data-kind="places"') : hdrBtn('share', I.share, 'Share or Print Rentals', 'data-kind="rentals"'), fab: UI.vend === 'vendors' ? ['addvendor', 'Vendor'] : UI.vend === 'places' ? ['addrow', 'Place', 'locations'] : ['addrow', 'Rental', 'equipment'], tabs: vtabs, html: body };
 }
 
 
@@ -1549,6 +1623,7 @@ function taskForm(i) {
   <div class="two">${fld('nt-due', 'Due Date', t['Due Date'], 'date')}${fsel('nt-owner', 'Who', owners, t.Owner)}</div>
   <div class="two">${fsel('nt-pri', 'Priority', DATA.lists.Priority, t.Priority)}${fsel('nt-cat', 'Category', cats, t.Category)}</div>
   <div class="field"><label for="nt-notes">Notes</label><textarea id="nt-notes" rows="2" placeholder="Optional">${esc(t.Notes)}</textarea></div>
+  ${isNew ? '' : shopLink(shopFor(t.Task))}
   <button class="btn plum" data-act="savetask" data-i="${isNew ? '' : i}">${isNew ? I.plus + ' Add Task' : 'Save Changes'}</button>
   ${isNew ? '<button class="btn alt" data-close="1">Cancel</button>' : `<div class="btnrow"><button class="btn alt" data-close="1">Cancel</button><button class="btn alt danger" data-act="deltask" data-i="${i}">${I.trash} Delete Task</button></div>`}`);
   if (isNew) document.getElementById('nt-task').focus();
@@ -1608,7 +1683,7 @@ const FAQ = [
   ['Can I search everything at once?', 'Yes. Tap the magnifying glass on Home to find any guest, vendor, task, schedule event, place or payment.'],
   ['How do I share my task list with someone?', 'On Plan, tap the share icon at the top. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
   ['What is the difference between Booked and Paid?', 'Booked is what you have agreed to pay vendors. Paid is money already sent. The gap between them is what you still owe.'],
-  ['Can my fiancé or planner use this too?', 'Your plan is saved privately on this phone, with no ads or vendor sales calls. The Stationery tab is our own shop and completely optional. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your fiancé can import it on their phone.'],
+  ['Can my fiancé or planner use this too?', 'Your plan is saved privately on this phone, with no ads or vendor sales calls. Stationery, under Vendors, is our own shop and completely optional. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your fiancé can import it on their phone.'],
   ['How long is the tour, and can I skip around?', 'It runs about two and a half minutes, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
   ['Can I stop people from being contacted at certain times?', 'Yes. Open anyone\'s card (a guest, vendor or key contact) and tap Contact Window. Pick Any Time, Set Hours or Wedding Day Only, and turn on Off-Limits on the Wedding Day if you like. Outside that window the Call, Text and Email buttons pause and point to the planner or day-of contact instead, and group texts leave that person out. Settings has a one-tap button to keep the bride and groom off-limits on the wedding day.'],
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes an Excel template, an example workbook and a user guide. The tabs match the app (Decisions, Tasks, Guests, Schedule and so on), so you can start in Excel and import it here, or download your plan from here and keep working in Excel on a computer.'],
@@ -2360,58 +2435,6 @@ async function cloudAct(ds) {
 }
 
 /* let each sheet opener record itself so Back can reopen it */
-/* ---------- STATIONERY ----------
-   Read-only catalog, maintained by the owner (app/catalog.json, built in as SHOP).
-   Nothing here is stored in S, exported, or synced. */
-const SHOP = {"categories":[{"id":"save-the-dates","name":"Save the Dates","for":"Mail 6 to 8 months before the wedding"},{"id":"invitations","name":"Invitations","for":"Mail 6 to 8 weeks before the wedding"},{"id":"day-of","name":"Day-Of Paper","for":"Programs, menus and place cards"},{"id":"signs","name":"Signs","for":"Welcome, seating and bar signs"},{"id":"favors","name":"Favors & Gifts","for":"Tags, labels and wedding party gifts"},{"id":"thank-you","name":"Thank-You Cards","for":"Send within 3 months of the wedding"}],"items":[]};
-const SHOP_SLOTS = 3;
-UI.shop = UI.shop || 'all';
-const shopMoney = v => v === '' || v == null || isNaN(+v) ? '' : '$' + (+v % 1 ? (+v).toFixed(2) : String(+v));
-const shopCat = id => SHOP.categories.find(c => c.id === id) || { id, name: id };
-function shopItems(cat) {
-  const real = SHOP.items.filter(it => it.category === cat && it.active !== false).sort((a, b) => (a.sort || 0) - (b.sort || 0));
-  if (real.length) return real;
-  return Array.from({ length: SHOP_SLOTS }, (_, n) => ({ id: `${cat}-slot-${n + 1}`, category: cat, slot: true, name: `${shopCat(cat).name.replace(/s$/, '')} Option ${n + 1}`, description: 'Photo, description and price will appear here.', unit: 'each' }));
-}
-const shopAll = () => SHOP.categories.flatMap(c => shopItems(c.id));
-const shopPhoto = (it, big) => it.image ? `<img src="${esc(it.image)}" alt="${esc(it.name)}" loading="lazy">` : `<span class="shopph">${I.shop}${big ? '<b>Photo coming soon</b>' : ''}</span>`;
-const shopPrice = it => it.slot ? '<span class="soon">Price coming soon</span>' : `${it.from ? 'from ' : ''}${shopMoney(it.price)} <small>${esc(it.unit || 'each')}</small>`;
-function renderShop() {
-  const cats = SHOP.categories.filter(c => UI.shop === 'all' || UI.shop === c.id);
-  const row = it => `<div class="row shoprow"><button class="main" data-shopitem="${esc(it.id)}"><span class="shopthumb">${shopPhoto(it)}</span><span class="stx"><span class="t">${esc(it.name)}</span><span class="m">${esc(it.description || '')}</span><span class="price">${shopPrice(it)}</span></span></button>${it.slot ? '<span class="pill soft">Soon</span>' : `<button class="btn sm alt" data-shopbuy="${esc(it.id)}" aria-label="Order ${esc(it.name)}">Order</button>`}</div>`;
-  const body = cats.map(c => { const items = shopItems(c.id); return `<section class="card flush"><div class="sh shopsh"><h3>${esc(c.name)}</h3>${c.for ? `<span class="note">${esc(c.for)}</span>` : ''}</div>${items.map(row).join('')}</section>`; }).join('');
-  const live = SHOP.items.filter(i => i.active !== false).length;
-  const chips = SHOP.categories.map(c => `<button class="chip" data-shopcat="${c.id}" aria-pressed="${UI.shop === c.id}">${esc(c.name)}</button>`).join('');
-  return { eyebrow: live ? `${live} item${live === 1 ? '' : 's'} · Paper for your day` : 'Paper for your day', title: 'Stationery', act: '', tabs: `<div class="shopcats" role="group" aria-label="Stationery categories. Tap again to show all.">${chips}</div>`, html: body + (live ? '' : '<p class="note" style="text-align:center;padding:4px 28px 10px">New pieces are on the way. Check back soon.</p>') };
-}
-function shopQty(it) {
-  if (!it.per || it.per === 'order') return null;
-  const g = +S.details.target || S.people.length; if (!g) return null;
-  const n = Math.max(it.per === 'guest' ? g : Math.ceil(g / 2), +it.min || 0);
-  return [n, it.per === 'guest' ? 'guests' : 'invitations (about one per couple or family)'];
-}
-function shopSheet(id) {
-  const it = shopAll().find(x => x.id === id) || SHOP.items.find(x => x.id === id); if (!it) return;
-  const q = !it.slot && it.price ? shopQty(it) : null, dash = '<span class="soon">Coming soon</span>';
-  const kv = [['Category', esc(shopCat(it.category).name)], ['Best for', it.for ? esc(it.for) : dash], ...(it.options || []).map(o => [esc(o.name), esc((o.choices || []).join(', '))]), ['Minimum order', it.min ? esc(String(it.min)) : (it.slot ? dash : 'None')], ['Proof', it.proof ? esc(it.proof) : dash], ['Delivery', it.delivery ? esc(it.delivery) : dash], ...(q ? [[`For ${q[0]} ${q[1]}`, `about ${shopMoney(Math.round(q[0] * it.price))}`]] : [])];
-  sheet(`<div class="shopbig">${shopPhoto(it, true)}</div><h4>${esc(it.name)}</h4><div class="shopprice">${shopPrice(it)}</div>${it.description ? `<p class="note" style="margin:6px 0 12px">${esc(it.description)}</p>` : ''}
-  <div class="kv">${kv.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join('')}</div>
-  ${it.slot || !it.checkout ? `<button class="btn plum" disabled style="margin-top:14px;opacity:.55">Available Soon</button>` : `<button class="btn plum" data-shopbuy="${esc(it.id)}" style="margin-top:14px">${I.lock || ''}Order Securely</button><p class="note" style="text-align:center;margin-top:10px">Checkout opens in a secure Stripe page. Add your names and date there.</p>`}`);
-}
-function shopBuy(id) {
-  const it = SHOP.items.find(x => x.id === id);
-  if (!it || !it.checkout) return toast('This piece is not available to order yet.');
-  let u; try { u = new URL(it.checkout); } catch (e) { return toast('This piece is not available to order yet.'); }
-  if (u.protocol !== 'https:' || !/(^|\.)stripe\.com$/.test(u.hostname)) return toast('This piece is not available to order yet.');
-  u.searchParams.set('client_reference_id', ('wd_' + it.id).replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 200));
-  buzz(); window.open(u.href, '_blank', 'noopener');
-}
-document.addEventListener('click', e => {
-  const c = e.target.closest('[data-shopcat]'); if (c) { e.stopPropagation(); UI.shop = UI.shop === c.dataset.shopcat ? 'all' : c.dataset.shopcat; render(); return scrollTo(0, 0); }
-  const o = e.target.closest('[data-shopitem]'); if (o) { e.stopPropagation(); return shopSheet(o.dataset.shopitem); }
-  const b = e.target.closest('[data-shopbuy]'); if (b) { e.stopPropagation(); return shopBuy(b.dataset.shopbuy); }
-}, true);
-
 for (const n of ["shopSheet", "inviteSheet", "memberSheet", "myRoleSheet", "rowForm", "tableSheet", "searchSheet", "callSheet", "dndSheet", "reachSheet", "contactSheet", "mapSheet", "composeSheet", "repliesSheet", "guestSheet", "guestForm", "vendorSheet", "vendorForm", "taskForm", "payForm", "settingsSheet", "helpSheet", "shareSheet", "importSheet"]) { const f = window[n]; if (typeof f !== 'function') continue; window[n] = function (...args) { SH_OPEN = (SH_OPEN && SH_OPEN.back && SH_OPEN.fn === n) ? SH_OPEN : { fn: n, args }; return f.apply(this, args); }; }
 cloudInit();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
