@@ -627,6 +627,12 @@ body:has(#layer .scrim) { overflow: hidden; }
 .who .whoname b { font-weight: 600; text-align: left; }
 .who .whoname small { font-size: 12px; color: var(--muted); }
 .who .whoacc { color: var(--plum); white-space: nowrap; }
+
+/* small phones */
+.sheet { grid-template-columns: minmax(0, 1fr); }
+.two > * { min-width: 0; }
+.two input, .two select { min-width: 0; width: 100%; }
+@media (max-width: 360px) { .legend { grid-template-columns: repeat(2, auto) !important; row-gap: 6px; } .sh .note { white-space: nowrap; } .sh { flex-wrap: wrap; row-gap: 2px; } }
 </style>
 
 <div class="app" id="app">
@@ -701,7 +707,19 @@ function shiftExample(st) {
   return st;
 }
 const KEY = 'wedding-desk-app-v2';
-try { S = JSON.parse(localStorage.getItem(KEY)) || freshState(); } catch (e) { S = freshState(); }
+const LIST_KEYS = ['tasks', 'risks', 'budget', 'payments', 'people', 'vendors', 'planner', 'locations', 'photos', 'music', 'rides', 'lodging', 'equipment', 'questions', 'packing'];
+/* Load the saved plan. A damaged save is kept aside (never thrown away) and repaired as far as possible, so the app always opens. */
+(() => {
+  let raw = null; try { raw = localStorage.getItem(KEY); } catch (e) {}
+  let v = null; try { v = raw ? JSON.parse(raw) : null; } catch (e) { v = undefined; }
+  const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+  const usable = isObj(v) && (isObj(v.details) || LIST_KEYS.some(k => Array.isArray(v[k]) && v[k].length));
+  if (raw && !usable) { try { localStorage.setItem(KEY + '-damaged-' + Date.now(), raw); } catch (e) {} }
+  if (!usable) { S = freshState(); if (raw) S.recovered = true; return; }
+  S = v; if (!isObj(S.details)) S.details = {};
+  for (const k of LIST_KEYS) S[k] = Array.isArray(S[k]) ? S[k].filter(isObj) : (k === 'packing' ? undefined : []);
+  for (const k of Object.keys(S.details)) if (S.details[k] != null && typeof S.details[k] === 'object') S.details[k] = '';
+})();
 S.auto = S.auto || { q: true, gift: true, thanks: true, vendor: true };
 if (!Array.isArray(S.packing)) S.packing = rows('Packing');
 /* questionnaire v2: bring in the added decisions once, without touching answers already given */
@@ -716,20 +734,21 @@ if (!S.reach) S.reach = S.own ? {} : clone(EX_REACH);
 /* older saves of the untouched example get the same shift once; anything personalised is left alone */
 if (!S.own && !S.exShifted && S.details && S.details.couple === DATA.details.couple && S.details.wd === DATA.details.wd) shiftExample(S);
 try { navigator.storage?.persist?.(); } catch (e) {}
+if (S.recovered) { delete S.recovered; setTimeout(() => toast('Your saved plan couldn’t be read, so a copy was kept safely on this phone and the example opened. Import an Excel copy to restore it.'), 600); }
 for (const [k, v] of Object.entries({ rsvpBy: '', rsvpLink: '', meals: 'Chicken, Beef, Fish, Vegetarian', pemail: '', paddr: '', demail: '', daddr: '' })) if (S.details[k] == null) S.details[k] = v;
 S.vendors.forEach(v => { if (v.Website == null) v.Website = (DATA.Vendors.r.find(r => r[1] === v.Company) || [])[DATA.Vendors.h.indexOf('Website')] || ''; if (v.Address == null) v.Address = (DATA.Vendors.r.find(r => r[1] === v.Company) || [])[DATA.Vendors.h.indexOf('Address')] || ''; });
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) { if (!save.warned) { save.warned = true; setTimeout(() => toast('This phone is out of storage, so new changes may not be kept. Download Excel in Settings to keep a copy.'), 50); } } if (typeof CLOUD !== 'undefined' && CLOUD.wid) cloudQueue(); }
 
 const TODAY = new Date(); TODAY.setHours(0, 0, 0, 0);
-const D = s => { if (!s) return null; const [y, m, d] = String(s).split('-').map(Number); return new Date(y, m - 1, d); };
+const D = s => { const mt = /^(\d{4})-(\d{1,2})-(\d{1,2})/.exec(String(s || '')); if (!mt) return null; const d = new Date(+mt[1], mt[2] - 1, +mt[3]); return isNaN(d) ? null : d; };
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const isoPlus = n => { const d = new Date(TODAY); d.setDate(d.getDate() + n); return iso(d); };
-const days = s => Math.round((D(s) - TODAY) / 864e5);
+const days = s => { const d = D(s); return d ? Math.round((d - TODAY) / 864e5) : NaN; };
 const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const fmtD = s => { const d = D(s); return d ? `${MON[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}` : ''; };
 const longD = s => { const d = D(s); return d ? d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) : ''; };
 const money = n => '$' + Math.round(+n || 0).toLocaleString('en-US');
-const time12 = t => { if (!t) return ''; const [h, m] = t.split(':').map(Number); return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
+const time12 = t => { if (!t) return ''; const mt = String(t).match(/^\s*(\d{1,2}):(\d{2})/); if (!mt) return String(t).replace(/[<>&"]/g, '').slice(0, 12); if (/[ap]\.?m/i.test(t)) return String(t).replace(/[<>&"]/g, '').trim().toUpperCase(); const h = +mt[1], m = +mt[2]; return `${((h + 11) % 12) + 1}:${String(m).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`; };
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = n => String(n).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
 const OPEN = t => t.Status !== 'Completed' && t.Status !== 'Cancelled';
@@ -1003,14 +1022,14 @@ function renderGuests() {
     const pill = r => r === 'Accepted' ? 'pill done' : r === 'Declined' ? 'pill red' : r === 'Waitlist' ? 'pill soft' : 'pill rose';
     body = `
     ${s.inv ? `<section class="rsvpbar"><div class="hd"><b>${s.inv} still to reply</b><span class="note">${S.people.filter(p => p.RSVP === 'Invited' && p.rsvpAsked).length} asked so far</span></div><div class="acts"><button class="btn plum" data-act="rsvp" data-mode="sms">${I.sms} Text</button><button class="btn plum" data-act="rsvp" data-mode="email">${I.mail} Email</button><button class="btn alt" data-act="replies">${I.check} Replies</button></div></section>` : ''}
-    <section class="card flush"><div class="sh"><button class="selbtn ${UI.selecting ? 'on' : ''}" data-act="select">${UI.selecting ? 'Done' : I.select + ' Select Guests'}</button><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + p.Table : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
+    <section class="card flush"><div class="sh"><button class="selbtn ${UI.selecting ? 'on' : ''}" data-act="select">${UI.selecting ? 'Done' : I.select + ' Select Guests'}</button><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + esc(p.Table) : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
   } else if (UI.guests === 'seating') {
     const att = S.people.filter(p => !['Declined', 'Waitlist'].includes(p.RSVP));
     const tables = [...new Set(att.map(p => p.Table).filter(Boolean))].sort((a, b) => a - b);
     const meals = {}; att.forEach(p => { if (p['Meal Choice']) meals[p['Meal Choice']] = (meals[p['Meal Choice']] || 0) + 1; });
     body = `<section class="card"><div class="sh"><h3>Meal Counts</h3><span class="note">${att.length} invited or attending</span></div><div class="bars">${Object.entries(meals).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<div class="bar3"><div class="top3"><span>${esc(m)}</span><span>${n}</span></div><div class="track"><i style="width:${n / att.length * 100}%;background:var(--mauve)"></i></div></div>`).join('')}</div></section>
     ${(() => { const un = S.people.map((p, i) => [p, i]).filter(([p]) => p.RSVP === 'Accepted' && !p.Table), max = Math.max(12, ...att.map(p => +p.Table || 0)) + 1; return un.length ? `<section class="card flush"><div class="sh"><h3>Needs a Table</h3><span class="note">${un.length} attending</span></div>${un.slice(0, UI.allUnseated ? 999 : 6).map(([p, i]) => `<div class="row"><div class="avatar">${initials(p.Name)}</div><div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] || p.Relationship || '')}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div>${tableSel(i, '', max)}</div>`).join('')}${un.length > 6 && !UI.allUnseated ? `<button class="addrow" data-act="allunseated">Show All ${un.length}</button>` : ''}</section>` : `<section class="card"><div class="note" style="text-align:center">Everyone attending has a table. Tap a table to move people.</div></section>`; })()}
-    <div class="table-card">${tables.map(t => { const g = att.filter(p => p.Table == t); const seats = g.length > 10 ? 12 : 10; const diet = g.filter(p => p['Dietary Restrictions'] && p['Dietary Restrictions'] !== 'None').length; return `<button class="tcard" data-table="${t}"><div class="h"><b>Table ${t}</b><span class="note">${g.length}/${seats}</span></div><div class="seats">${Array.from({ length: seats }, (_, k) => `<i class="${k < g.length ? 'f' : ''}"></i>`).join('')}</div><div class="ml">${diet ? `<span class="pill warn">${diet} dietary</span>` : '<span class="pill soft">No dietary needs</span>'}</div><div class="ml">${g.slice(0, 3).map(p => esc(p.Name.split(' ')[0])).join(', ')}${g.length > 3 ? ` +${g.length - 3}` : ''}</div></button>`; }).join('')}</div>`;
+    <div class="table-card">${tables.map(t => { const g = att.filter(p => p.Table == t); const seats = g.length > 10 ? 12 : 10; const diet = g.filter(p => p['Dietary Restrictions'] && p['Dietary Restrictions'] !== 'None').length; return `<button class="tcard" data-table="${esc(t)}"><div class="h"><b>Table ${esc(t)}</b><span class="note">${g.length}/${seats}</span></div><div class="seats">${Array.from({ length: seats }, (_, k) => `<i class="${k < g.length ? 'f' : ''}"></i>`).join('')}</div><div class="ml">${diet ? `<span class="pill warn">${diet} dietary</span>` : '<span class="pill soft">No dietary needs</span>'}</div><div class="ml">${g.slice(0, 3).map(p => esc(p.Name.split(' ')[0])).join(', ')}${g.length > 3 ? ` +${g.length - 3}` : ''}</div></button>`; }).join('')}</div>`;
   } else {
     body = `<section class="card flush"><div class="sh"><h3>Hotel Rooms</h3><span class="note">${S.lodging.filter(l => l.Status === 'Confirmed').length}/${S.lodging.length} confirmed</span></div>${S.lodging.map((l, li) => `<button class="row" data-row="lodging:${li}"><div class="main"><div class="t">${esc(l.Guest)}</div><div class="m">${esc(l.Hotel)}${l.Confirmation ? ' · #' + esc(l.Confirmation) : ''}</div></div><span class="pill ${l.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(l.Status)}</span></button>`).join('') || '<div class="empty">No hotel rooms yet.</div>'}<button class="addrow" data-act="addrow" data-k="lodging">${I.plus} Add Hotel Room</button></section>
     <section class="card flush"><div class="sh"><h3>Rides</h3><span class="note">${S.rides.filter(l => l.Status === 'Confirmed').length}/${S.rides.length} confirmed</span></div>${S.rides.map((r, ri) => `<button class="row" data-row="rides:${ri}"><div class="date" style="width:58px"><b style="font-size:14px">${time12(r.Time).replace(' ', '')}</b></div><div class="main"><div class="t" style="white-space:normal">${esc(r.Service)}</div><div class="m">${esc(r.Vendor)}</div></div><span class="pill ${r.Status === 'Confirmed' ? 'done' : 'warn'}">${esc(r.Status)}</span></button>`).join('') || '<div class="empty">No rides yet.</div>'}<button class="addrow" data-act="addrow" data-k="rides">${I.plus} Add Ride</button></section>`;
@@ -1133,7 +1152,7 @@ function tableSheet(t) {
   <section class="card flush">${at.map(([p, i]) => `<div class="row"><div class="avatar">${initials(p.Name)}</div><div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Meal Choice'] || 'No meal yet')}${p['Dietary Restrictions'] && p['Dietary Restrictions'] !== 'None' ? ' · ' + esc(p['Dietary Restrictions']) : ''}</div></div>${tableSel(i, p.Table, max)}</div>`).join('') || '<div class="empty">No one at this table yet.</div>'}</section>
   <button class="btn alt" data-close="1">Done</button>`);
 }
-const tableSel = (i, cur, max) => `<select class="sel tsel" data-edit="${i}" data-field="Table" aria-label="Table">${['', ...Array.from({ length: max }, (_, k) => k + 1)].map(n => `<option value="${n}" ${String(n) === String(cur ?? '') ? 'selected' : ''}>${n === '' ? 'None' : 'Table ' + n}</option>`).join('')}</select>`;
+const tableSel = (i, cur, max) => `<select class="sel tsel" data-edit="${i}" data-field="Table" aria-label="Table">${['', ...Array.from({ length: max }, (_, k) => k + 1), ...(cur && !/^\d+$/.test(String(cur)) ? [esc(cur)] : [])].map(n => `<option value="${n}" ${String(n) === String(cur ?? '') ? 'selected' : ''}>${n === '' ? 'None' : 'Table ' + n}</option>`).join('')}</select>`;
 
 /* ---------- search everything ---------- */
 function searchSheet() {
