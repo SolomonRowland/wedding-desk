@@ -2269,6 +2269,9 @@ async function cloudInit() {
   if (session) return cloudAfterSignIn(session);
   gateEmail();
   addEventListener('online', () => { if (CLOUD.pending) cloudPush(); });
+  // the email link can finish sign-in in another tab; pick that up here too
+  CLOUD.sb.auth.onAuthStateChange((ev, ses) => { if (ev === 'SIGNED_IN' && ses && document.getElementById('gate') && !CLOUD.wid && !CLOUD.entering) { CLOUD.entering = true; cloudAfterSignIn(ses); } });
+  document.addEventListener('visibilitychange', async () => { if (document.visibilityState !== 'visible' || CLOUD.wid || CLOUD.entering || !document.getElementById('g-code')) return; const { data: { session: s2 } } = await CLOUD.sb.auth.getSession(); if (s2) { CLOUD.entering = true; cloudAfterSignIn(s2); } });
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && CLOUD.wid) cloudPull(false); });
 
@@ -2280,15 +2283,15 @@ function gateShell(inner) { gateOpen().innerHTML = `<div class="gwrap"><div clas
 function gateBusy(msg) { gateShell(`<div class="gbusy"><span class="spin"></span>${esc(msg)}</div>`); }
 function gateMsg(msg, retry) { gateShell(`<h2>Hmm.</h2><p>${esc(msg)}</p><button class="btn plum" data-g="retry">Try Again</button>`); }
 function gateEmail(err) {
-  gateShell(`<h2>Sign in</h2><p>Enter your email and we’ll send you a sign-in code. No password needed.</p>
+  gateShell(`<h2>Sign in</h2><p>Enter your email and we’ll send you a sign-in link. No password needed.</p>
   <div class="field"><label for="g-email">Email</label><input id="g-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" value="${esc(GATE.email)}" placeholder="you@example.com"></div>
-  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="send">Email Me a Code</button>`);
+  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="send">Email Me a Sign-In Link</button>`);
 }
 function gateCode(err) {
-  gateShell(`<h2>Check your email</h2><p>We sent a code to <b>${esc(GATE.email)}</b>. Enter it below.</p>
+  gateShell(`<h2>Check your email</h2><p>We sent an email to <b>${esc(GATE.email)}</b>. Tap <b>Sign in</b> in that email. If it shows a code instead, enter it below.</p>
   <div class="field"><label for="g-code">Sign-in code</label><input id="g-code" class="gcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></div>
   ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="verify">Sign In</button>
-  <div class="glinks"><button data-g="resend">Send a new code</button><button data-g="other">Use a different email</button></div>`);
+  <div class="glinks"><button data-g="resend">Send another email</button><button data-g="other">Use a different email</button></div>`);
 }
 function gateProfile(err) {
   gateShell(`<h2>Welcome!</h2><p>Tell us who you are. Everyone in the wedding sees this.</p>
@@ -2308,7 +2311,7 @@ document.addEventListener('click', async e => {
   if (g === 'send' || g === 'resend') {
     if (g === 'send') GATE.email = gVal('g-email').toLowerCase();
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(GATE.email)) return gateEmail('That email doesn’t look right.');
-    gateBusy('Sending your code…');
+    gateBusy('Sending your email…');
     const { error } = await CLOUD.sb.auth.signInWithOtp({ email: GATE.email, options: { shouldCreateUser: true, emailRedirectTo: SITE } });
     if (error) return gateEmail(/rate|seconds/i.test(error.message) ? 'Please wait a minute before asking for another code.' : 'We couldn’t send the code. ' + error.message);
     return gateCode();
@@ -2316,9 +2319,9 @@ document.addEventListener('click', async e => {
   if (g === 'other') return gateEmail();
   if (g === 'verify') {
     const token = gVal('g-code').replace(/\s/g, ''); if (!/^\d{6,10}$/.test(token)) return gateCode('Enter the code from the email.');
-    gateBusy('Signing you in…');
+    gateBusy('Signing you in…'); CLOUD.entering = true;
     const { data, error } = await CLOUD.sb.auth.verifyOtp({ email: GATE.email, token, type: 'email' });
-    if (error || !data.session) return gateCode('That code didn’t work. It may have expired, so ask for a new one.');
+    if (error || !data.session) { CLOUD.entering = false; return gateCode('That code didn’t work. It may have expired, so ask for a new one.'); }
     return cloudAfterSignIn(data.session);
   }
   if (g === 'role') { GATE.name = gVal('g-name'); GATE.role = b.dataset.v; return gateProfile(); }
