@@ -556,6 +556,11 @@ body.gated { overflow: hidden; }
 #gate .groles { display: flex; flex-wrap: wrap; gap: 8px; }
 #gate .groles .chip[aria-pressed="true"] { background: var(--plum); color: #fff; border-color: var(--plum); }
 #gate .gor { text-align: center; color: var(--muted); font-size: 12.5px; margin: 2px 0 -4px; }
+#gate .gseg { display: grid; grid-template-columns: 1fr 1fr; background: var(--ground); border-radius: 12px; padding: 4px; gap: 4px; }
+#gate .gseg button { border: 0; background: none; border-radius: 9px; padding: 9px 6px; font: 600 14px var(--body); color: var(--muted); cursor: pointer; }
+#gate .gseg button[aria-pressed="true"] { background: var(--surface); color: var(--plum); box-shadow: 0 1px 4px rgba(63,42,41,.15); }
+#gate .gpw { position: relative; } #gate .gpw input { width: 100%; padding-right: 64px; }
+#gate .gpw button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--plum); font: 600 13px var(--body); padding: 6px 8px; cursor: pointer; }
 #gate .glinks { display: flex; justify-content: center; gap: 18px; }
 #gate .glinks button { background: none; border: 0; color: var(--plum); font: 600 13px var(--body); padding: 4px; cursor: pointer; }
 #gate .gbusy { display: flex; align-items: center; gap: 12px; justify-content: center; color: var(--muted); padding: 18px 0; }
@@ -2174,6 +2179,7 @@ const SITE = 'https://solomonrowland.github.io/wedding-desk/';
 const ROLES = [['bride', 'Bride'], ['groom', 'Groom'], ['coordinator', 'Coordinator'], ['maid_of_honor', 'Maid of Honor'], ['best_man', 'Best Man'], ['bridesmaid', 'Bridesmaid'], ['groomsman', 'Groomsman'], ['brides_parents', 'Bride’s Parents'], ['grooms_parents', 'Groom’s Parents'], ['family', 'Family'], ['friend', 'Friend']];
 const ROLE = k => (ROLES.find(r => r[0] === k) || [k, k])[1];
 const ACCESS = { owner: ['Full Control', 'Everything, including inviting people. For the Bride and Groom.'], editor: ['Can Edit', 'Can change the plan. Good for your coordinator.'], viewer: ['View Only', 'Can look but not change anything.'] };
+const WD_RECOVERY = /type=recovery/.test(location.hash);
 const CLOUD = { on: false, sb: null, user: null, me: null, wid: null, ver: 0, base: null, members: [], timer: null, applying: false, pending: false, chan: null, warned: false };
 const DEVICE_ONLY = ['seenWelcome', 'role'];
 const cloudWanted = () => SB_URL.startsWith('https://') && SB_KEY.length > 20 && /(^|\.)github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
@@ -2251,7 +2257,8 @@ async function cloudEnter(m) {
   gateClose(); render();
 }
 async function cloudAfterSignIn(session) {
-  CLOUD.user = session.user;
+  CLOUD.user = session.user; CLOUD.entering = true;
+  if (!GATE.name && session.user.user_metadata && session.user.user_metadata.name) GATE.name = String(session.user.user_metadata.name).slice(0, 80);
   const { data: ms, error } = await CLOUD.sb.from('members').select('*').eq('user_id', CLOUD.user.id);
   if (error) return gateMsg('We couldn’t reach The Wedding Desk. Check your connection and try again.');
   let saved = null; try { saved = localStorage.getItem('wd-cloud-wid'); } catch (e) {}
@@ -2266,11 +2273,12 @@ async function cloudInit() {
   try { await loadSupabase(); } catch (e) { return gateMsg('You’re offline. Connect to the internet to sign in.', true); }
   CLOUD.sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
   const { data: { session } } = await CLOUD.sb.auth.getSession();
+  if (session && WD_RECOVERY) return gateNewPass();
   if (session) return cloudAfterSignIn(session);
   gateEmail();
   addEventListener('online', () => { if (CLOUD.pending) cloudPush(); });
   // the email link can finish sign-in in another tab; pick that up here too
-  CLOUD.sb.auth.onAuthStateChange((ev, ses) => { if (ev === 'SIGNED_IN' && ses && document.getElementById('gate') && !CLOUD.wid && !CLOUD.entering) { CLOUD.entering = true; cloudAfterSignIn(ses); } });
+  CLOUD.sb.auth.onAuthStateChange((ev, ses) => { if (ev === 'PASSWORD_RECOVERY') { CLOUD.entering = true; return gateNewPass(); } if (ev === 'SIGNED_IN' && ses && document.getElementById('gate') && !CLOUD.wid && !CLOUD.entering) { CLOUD.entering = true; cloudAfterSignIn(ses); } });
   document.addEventListener('visibilitychange', async () => { if (document.visibilityState !== 'visible' || CLOUD.wid || CLOUD.entering || !document.getElementById('g-code')) return; const { data: { session: s2 } } = await CLOUD.sb.auth.getSession(); if (s2) { CLOUD.entering = true; cloudAfterSignIn(s2); } });
 }
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && CLOUD.wid) cloudPull(false); });
@@ -2282,11 +2290,24 @@ function gateClose() { document.getElementById('gate')?.remove(); document.body.
 function gateShell(inner) { gateOpen().innerHTML = `<div class="gwrap"><div class="gtop"><div class="gmark">WD</div><div class="gname">The Wedding Desk</div><div class="gtag">Plan your wedding together</div></div><div class="gcard">${inner}</div></div>`; const f = document.querySelector('#gate input'); if (f) setTimeout(() => f.focus(), 60); }
 function gateBusy(msg) { gateShell(`<div class="gbusy"><span class="spin"></span>${esc(msg)}</div>`); }
 function gateMsg(msg, retry) { gateShell(`<h2>Hmm.</h2><p>${esc(msg)}</p><button class="btn plum" data-g="retry">Try Again</button>`); }
+const GPW = `<div class="field"><label for="g-pw">Password</label><div class="gpw"><input id="g-pw" type="password" autocomplete="__AC__" placeholder="__PH__"><button type="button" data-g="showpw" aria-label="Show password">Show</button></div></div>`;
 function gateEmail(err) {
-  gateShell(`<h2>Sign in</h2><p>Enter your email and we’ll send you a sign-in link. No password needed.</p>
+  const isNew = GATE.mode !== 'have';
+  gateShell(`<div class="gseg" role="tablist"><button data-g="mode" data-v="new" aria-pressed="${isNew}">Create Account</button><button data-g="mode" data-v="have" aria-pressed="${!isNew}">Sign In</button></div>
+  ${isNew ? `<p>New here? Make an account so you can share your plan with your partner and wedding party.</p>
+  <div class="field"><label for="g-name0">Your name</label><input id="g-name0" autocomplete="name" value="${esc(GATE.name)}" placeholder="First and last name"></div>` : `<p>Welcome back. Sign in with your email and password.</p>`}
   <div class="field"><label for="g-email">Email</label><input id="g-email" type="email" inputmode="email" autocomplete="email" autocapitalize="off" value="${esc(GATE.email)}" placeholder="you@example.com"></div>
-  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="send">Email Me a Sign-In Link</button>`);
+  ${GPW.replace('__AC__', isNew ? 'new-password' : 'current-password').replace('__PH__', isNew ? 'At least 8 characters' : '')}
+  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}
+  <button class="btn plum" data-g="${isNew ? 'signup' : 'signin'}">${isNew ? 'Create Account' : 'Sign In'}</button>
+  ${isNew ? '' : '<div class="glinks"><button data-g="forgot">Forgot password?</button></div>'}`);
 }
+function gateNewPass(err) {
+  gateShell(`<h2>Set a new password</h2><p>Pick a new password for your account.</p>
+  ${GPW.replace('__AC__', 'new-password').replace('__PH__', 'At least 8 characters')}
+  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="setpw">Save Password</button>`);
+}
+function gateSent(msg) { gateShell(`<h2>Check your email</h2><p>${msg}</p><button class="btn alt" data-g="back">Back to Sign In</button>`); }
 function gateCode(err) {
   gateShell(`<h2>Check your email</h2><p>We sent an email to <b>${esc(GATE.email)}</b>. Tap <b>Sign in</b> in that email. If it shows a code instead, enter it below.</p>
   <div class="field"><label for="g-code">Sign-in code</label><input id="g-code" class="gcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></div>
@@ -2308,13 +2329,45 @@ document.addEventListener('click', async e => {
   const b = e.target.closest('[data-g]'); if (!b || !CLOUD.sb && b.dataset.g !== 'retry') return;
   const g = b.dataset.g;
   if (g === 'retry') return location.reload();
-  if (g === 'send' || g === 'resend') {
-    if (g === 'send') GATE.email = gVal('g-email').toLowerCase();
+  if (g === 'mode') { GATE.email = gVal('g-email').toLowerCase() || GATE.email; if (document.getElementById('g-name0')) GATE.name = gVal('g-name0'); GATE.mode = b.dataset.v; return gateEmail(); }
+  if (g === 'showpw') { const pw = document.getElementById('g-pw'); const show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; b.textContent = show ? 'Hide' : 'Show'; return; }
+  if (g === 'back') { GATE.mode = 'have'; return gateEmail(); }
+  if (g === 'signup' || g === 'signin') {
+    GATE.email = gVal('g-email').toLowerCase(); const pw = document.getElementById('g-pw')?.value || '';
+    if (g === 'signup') GATE.name = gVal('g-name0');
+    if (g === 'signup' && !GATE.name) return gateEmail('Add your name.');
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(GATE.email)) return gateEmail('That email doesn’t look right.');
-    gateBusy('Sending your email…');
-    const { error } = await CLOUD.sb.auth.signInWithOtp({ email: GATE.email, options: { shouldCreateUser: true, emailRedirectTo: SITE } });
-    if (error) return gateEmail(/rate|seconds/i.test(error.message) ? 'Please wait a minute before asking for another code.' : 'We couldn’t send the code. ' + error.message);
-    return gateCode();
+    if (g === 'signup' && pw.length < 8) return gateEmail('Use a password with at least 8 characters.');
+    if (!pw) return gateEmail('Enter your password.');
+    gateBusy(g === 'signup' ? 'Creating your account…' : 'Signing you in…'); CLOUD.entering = true;
+    const r = g === 'signup'
+      ? await CLOUD.sb.auth.signUp({ email: GATE.email, password: pw, options: { data: { name: GATE.name }, emailRedirectTo: SITE } })
+      : await CLOUD.sb.auth.signInWithPassword({ email: GATE.email, password: pw });
+    if (r.error) { CLOUD.entering = false; const m = r.error.message || '';
+      if (/already|registered|exists/i.test(m)) { GATE.mode = 'have'; return gateEmail('There’s already an account with that email. Sign in instead.'); }
+      if (/invalid login|credentials/i.test(m)) return gateEmail('That email and password don’t match. Try again, or tap Forgot password.');
+      if (/not confirmed/i.test(m)) return gateEmail('This account still needs its email confirmed. Check your inbox for the link.');
+      if (/rate|seconds|too many/i.test(m)) return gateEmail('Too many tries. Please wait a minute and try again.');
+      if (/password/i.test(m)) return gateEmail(m);
+      return gateEmail('Something went wrong. ' + m); }
+    if (!r.data.session) { CLOUD.entering = false; GATE.mode = 'have'; return gateSent(`We sent a confirmation link to <b>${esc(GATE.email)}</b>. Tap it, then come back and sign in.`); }
+    return cloudAfterSignIn(r.data.session);
+  }
+  if (g === 'forgot') {
+    GATE.email = gVal('g-email').toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(GATE.email)) return gateEmail('Enter your email above first, then tap Forgot password.');
+    gateBusy('Sending…');
+    const { error } = await CLOUD.sb.auth.resetPasswordForEmail(GATE.email, { redirectTo: SITE });
+    if (error) return gateEmail(/rate|seconds/i.test(error.message) ? 'Please wait a minute before trying again.' : 'We couldn’t send the email. ' + error.message);
+    return gateSent(`If there’s an account for <b>${esc(GATE.email)}</b>, we emailed it a link to set a new password. Open the link on this phone or computer.`);
+  }
+  if (g === 'setpw') {
+    const pw = document.getElementById('g-pw')?.value || ''; if (pw.length < 8) return gateNewPass('Use a password with at least 8 characters.');
+    gateBusy('Saving…'); const { error } = await CLOUD.sb.auth.updateUser({ password: pw });
+    if (error) return gateNewPass('That didn’t work. ' + error.message);
+    try { history.replaceState(null, '', location.pathname); } catch (e) {}
+    const { data: { session } } = await CLOUD.sb.auth.getSession(); toast('Password saved');
+    return session ? cloudAfterSignIn(session) : gateEmail();
   }
   if (g === 'other') return gateEmail();
   if (g === 'verify') {
