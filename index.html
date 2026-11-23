@@ -561,6 +561,7 @@ body.gated { overflow: hidden; }
 #gate .gseg button[aria-pressed="true"] { background: var(--surface); color: var(--plum); box-shadow: 0 1px 4px rgba(63,42,41,.15); }
 #gate .gpw { position: relative; } #gate .gpw input { width: 100%; padding-right: 64px; }
 #gate .gpw button { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); background: none; border: 0; color: var(--plum); font: 600 13px var(--body); padding: 6px 8px; cursor: pointer; }
+#gate .gnote { font-size: 12.5px; color: var(--muted); text-align: center; margin: 0; }
 #gate .glinks { display: flex; justify-content: center; gap: 18px; }
 #gate .glinks button { background: none; border: 0; color: var(--plum); font: 600 13px var(--body); padding: 4px; cursor: pointer; }
 #gate .gbusy { display: flex; align-items: center; gap: 12px; justify-content: center; color: var(--muted); padding: 18px 0; }
@@ -2300,7 +2301,7 @@ function gateEmail(err) {
   ${GPW.replace('__AC__', isNew ? 'new-password' : 'current-password').replace('__PH__', isNew ? 'At least 8 characters' : '')}
   ${err ? `<div class="gerr">${esc(err)}</div>` : ''}
   <button class="btn plum" data-g="${isNew ? 'signup' : 'signin'}">${isNew ? 'Create Account' : 'Sign In'}</button>
-  ${isNew ? '' : '<div class="glinks"><button data-g="forgot">Forgot password?</button></div>'}`);
+  ${isNew ? '' : '<p class="gnote">Forgot your password? Ask the person who shared The Wedding Desk with you to reset it.</p>'}`);
 }
 function gateNewPass(err) {
   gateShell(`<h2>Set a new password</h2><p>Pick a new password for your account.</p>
@@ -2341,25 +2342,17 @@ document.addEventListener('click', async e => {
     if (!pw) return gateEmail('Enter your password.');
     gateBusy(g === 'signup' ? 'Creating your account…' : 'Signing you in…'); CLOUD.entering = true;
     const r = g === 'signup'
-      ? await CLOUD.sb.auth.signUp({ email: GATE.email, password: pw, options: { data: { name: GATE.name }, emailRedirectTo: SITE } })
+      ? await CLOUD.sb.auth.signUp({ email: GATE.email, password: pw, options: { data: { name: GATE.name } } })
       : await CLOUD.sb.auth.signInWithPassword({ email: GATE.email, password: pw });
     if (r.error) { CLOUD.entering = false; const m = r.error.message || '';
       if (/already|registered|exists/i.test(m)) { GATE.mode = 'have'; return gateEmail('There’s already an account with that email. Sign in instead.'); }
-      if (/invalid login|credentials/i.test(m)) return gateEmail('That email and password don’t match. Try again, or tap Forgot password.');
-      if (/not confirmed/i.test(m)) return gateEmail('This account still needs its email confirmed. Check your inbox for the link.');
+      if (/invalid login|credentials/i.test(m)) return gateEmail('That email and password don’t match. Check for typos and try again.');
+      if (/not confirmed/i.test(m)) return gateEmail('This account was made while email confirmation was on. Delete it in Supabase › Users and create it again.');
       if (/rate|seconds|too many/i.test(m)) return gateEmail('Too many tries. Please wait a minute and try again.');
       if (/password/i.test(m)) return gateEmail(m);
       return gateEmail('Something went wrong. ' + m); }
-    if (!r.data.session) { CLOUD.entering = false; GATE.mode = 'have'; return gateSent(`We sent a confirmation link to <b>${esc(GATE.email)}</b>. Tap it, then come back and sign in.`); }
+    if (!r.data.session) { CLOUD.entering = false; GATE.mode = 'have'; return gateEmail('Your account was saved, but sign-in is waiting on a setting. Turn off “Confirm email” in Supabase, then sign in here.'); }
     return cloudAfterSignIn(r.data.session);
-  }
-  if (g === 'forgot') {
-    GATE.email = gVal('g-email').toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(GATE.email)) return gateEmail('Enter your email above first, then tap Forgot password.');
-    gateBusy('Sending…');
-    const { error } = await CLOUD.sb.auth.resetPasswordForEmail(GATE.email, { redirectTo: SITE });
-    if (error) return gateEmail(/rate|seconds/i.test(error.message) ? 'Please wait a minute before trying again.' : 'We couldn’t send the email. ' + error.message);
-    return gateSent(`If there’s an account for <b>${esc(GATE.email)}</b>, we emailed it a link to set a new password. Open the link on this phone or computer.`);
   }
   if (g === 'setpw') {
     const pw = document.getElementById('g-pw')?.value || ''; if (pw.length < 8) return gateNewPass('Use a password with at least 8 characters.');
