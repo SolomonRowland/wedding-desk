@@ -622,6 +622,11 @@ body:has(#layer .scrim) { overflow: hidden; }
 .legaltx h3 { font: 600 19px var(--display); color: var(--deep); margin: 18px 0 4px; }
 .legaltx p { margin: 0 0 10px; } .legaltx ul { margin: 0 0 10px; padding-left: 20px; } .legaltx li { margin: 3px 0; }
 .legaltx mark { background: var(--warnbg); color: var(--warn); border-radius: 3px; padding: 0 3px; }
+
+.who .whoname { display: grid; gap: 1px; min-width: 0; color: var(--ink); }
+.who .whoname b { font-weight: 600; text-align: left; }
+.who .whoname small { font-size: 12px; color: var(--muted); }
+.who .whoacc { color: var(--plum); white-space: nowrap; }
 </style>
 
 <div class="app" id="app">
@@ -1647,6 +1652,7 @@ function settingsSheet(focusId) {
   ${f('doc', 'Day-Of Contact', d.doc)}${f('dphone', 'Day-Of Phone', d.dphone, 'tel')}${f('demail', 'Day-Of Email', d.demail, 'email')}${f('daddr', 'Day-Of Address', d.daddr)}
   <div class="note" style="margin-top:-6px">Blank email or address? The app fills them from your guest list or vendors when the name matches.</div>
   <button class="btn plum" data-act="savesettings">Save Changes</button>
+  ${partyHTML()}
   <div class="sect">Smart Steps</div>
   <div class="autos">${AUTOS.map(a => sw('auto', a)).join('')}</div>
   <div class="sect">Help</div>
@@ -1654,7 +1660,6 @@ function settingsSheet(focusId) {
   <div class="sect">Reminders</div>
   <div class="note" style="margin-top:-4px">Put every upcoming task, payment and wedding-day time on your phone's calendar, with alerts. Payments remind you three days early. Run it again after big changes.</div>
   <button class="btn alt" data-act="ics">${I.cal} Add Dates to My Calendar</button>
-  ${partyHTML()}
   <div class="sect">Contact Windows</div>
   <div class="note" style="margin-top:-4px">Choose when people can be reached. Open anyone's card and tap <b style="color:var(--ink)">Contact Window</b>. ${Object.keys(S.reach || {}).length ? `Set for ${Object.entries(S.reach).map(([n, r]) => `<b style="color:var(--ink)">${esc(n.replace(/\b\w/g, x => x.toUpperCase()))}</b> (${reachLabel(r)})`).join(', ')}.` : 'Nobody has one yet.'}</div>
   <button class="btn alt" data-act="quietday">${I.moon} Keep the Bride and Groom Off-Limits on the Wedding Day</button>
@@ -2076,7 +2081,7 @@ document.addEventListener('click', e => {
   if (ds.act === 'reachanyway') { UI.reachOk = true; closeSheet(); return contactAction(ds.a, ds.ck); }
   if (ds.act === 'quietday') { const n = S.people.filter(p => ['Bride', 'Groom'].includes(p['Individual Role'])); n.forEach(p => { const k = reachName(p.Name); S.reach[k] = { ...(S.reach[k] || { mode: 'any' }), off: true }; }); save(); toast(n.length ? `${n.map(p => firstName(p.Name)).join(' & ')} are off-limits on the wedding day` : 'Add the bride and groom to the guest list first'); return settingsSheet(); }
   if (ds.act === 'sheetback') return sheetBack();
-  if (['invite', 'invacc', 'invmake', 'invshare', 'member', 'memacc', 'memdel', 'myrole', 'setrole', 'signout'].includes(ds.act)) return cloudAct(ds);
+  if (['invite', 'invdel', 'invacc', 'invmake', 'invshare', 'member', 'memacc', 'memdel', 'myrole', 'setrole', 'signout'].includes(ds.act)) return cloudAct(ds);
   if (ds.act === 'impmode') { PENDING.mode = ds.v; return importSheet(); }
   if (ds.act === 'impgo') return PENDING?.mode === 'replace' ? confirmBox('Replace Everything?', 'Everything in the app is swapped for what’s in this Excel file. Tabs left blank in the file are cleared too.', 'Replace', applyImport) : applyImport();
   if (ds.act === 'savesettings') return saveSettings();
@@ -2205,6 +2210,9 @@ function cloudMerge(row, thenPush) {
 async function cloudMembers() {
   const { data } = await CLOUD.sb.from('members').select('*').eq('wedding_id', CLOUD.wid).order('joined_at');
   CLOUD.members = data || []; const me = CLOUD.members.find(m => m.user_id === CLOUD.user.id); if (me) { CLOUD.me = me; S.role = me.role; }
+  CLOUD.invites = [];
+  if (CLOUD.me && CLOUD.me.access === 'owner') { const { data: iv } = await CLOUD.sb.from('invites').select('code,access,created_at,expires_at').eq('wedding_id', CLOUD.wid).is('used_by', null).gt('expires_at', new Date().toISOString()).order('created_at'); CLOUD.invites = iv || []; }
+  if (SH_CUR && SH_CUR.fn === 'settingsSheet' && document.querySelector('.sheet')) settingsSheet();
 }
 async function cloudEnter(m) {
   CLOUD.me = m; CLOUD.wid = m.wedding_id; try { localStorage.setItem('wd-cloud-wid', m.wedding_id); } catch (e) {}
@@ -2318,11 +2326,17 @@ async function cloudSignOut() {
 
 /* ---------- Wedding Party, in Settings ---------- */
 function partyHTML() {
-  if (!CLOUD.wid) return '';
-  const owner = CLOUD.me.access === 'owner';
-  return `<div class="sect">Wedding Party</div>
-  <div class="note" style="margin-top:-4px">Signed in as <b style="color:var(--ink)">${esc(CLOUD.me.name)}</b> (${esc(ROLE(CLOUD.me.role))}, ${ACCESS[CLOUD.me.access][0]}) · ${esc(CLOUD.user.email)}. Changes save for everyone automatically.</div>
-  <div class="kv">${CLOUD.members.map(m => `<div ${owner && m.user_id !== CLOUD.user.id ? `data-act="member" data-u="${m.user_id}" style="cursor:pointer"` : ''}><span>${esc(m.name)}<br><small style="color:var(--muted)">${esc(ROLE(m.role))}</small></span><b>${ACCESS[m.access][0]}</b></div>`).join('')}</div>
+  const head = n => `<div class="sect">Who Can See This Plan${n ? ` · ${n}` : ''}</div>`;
+  if (!CLOUD.wid) return `${head(1)}
+  <div class="kv who"><div><span class="whoname"><b>You</b><small>On this phone</small></span><b class="whoacc">Full Control</b></div></div>
+  <div class="note">Only you can see this plan. It's saved on this phone and nothing is uploaded. Excel files and PDFs you share are copies, so people who get them can't see your later changes.</div>`;
+  const owner = CLOUD.me.access === 'owner', inv = owner ? (CLOUD.invites || []) : [];
+  const rows = CLOUD.members.map(m => { const me = m.user_id === CLOUD.user.id, tap = owner && !me;
+    return `<div ${tap ? `data-act="member" data-u="${m.user_id}" style="cursor:pointer"` : ''}><span class="whoname"><b>${esc(m.name)}${me ? ' (you)' : ''}</b><small>${esc(ROLE(m.role))}${m.joined_at ? ` · joined ${fmtD(String(m.joined_at).slice(0, 10))}` : ''}</small></span><b class="whoacc">${ACCESS[m.access][0]}${tap ? ' ›' : ''}</b></div>`; }).join('');
+  const pend = inv.length ? `<div class="grp" style="margin:12px 2px 6px">Invites Not Used Yet</div><div class="kv who">${inv.map(i => `<div><span class="whoname"><b>Code ${esc(i.code)}</b><small>${ACCESS[i.access][0]} · expires ${fmtD(String(i.expires_at).slice(0, 10))}</small></span><button class="btn sm alt" data-act="invdel" data-c="${esc(i.code)}">Cancel</button></div>`).join('')}</div>` : '';
+  return `${head(CLOUD.members.length)}
+  <div class="note" style="margin-top:-4px">Signed in as <b style="color:var(--ink)">${esc(CLOUD.me.name)}</b> · ${esc(CLOUD.user.email)}. Everyone below sees the same plan, and changes save for everyone automatically.${owner ? ' Tap a person to change what they can do or remove them.' : ''}</div>
+  <div class="kv who">${rows}</div>${pend}
   <div class="sharegrid">${owner ? `<button class="btn plum" data-act="invite">${I.plus} Invite Someone</button>` : ''}<button class="btn alt" data-act="myrole">Change My Role</button></div>
   <button class="btn alt sm" data-act="signout">Sign Out</button>`;
 }
@@ -2336,6 +2350,7 @@ function inviteSheet(access) {
 async function inviteMake() {
   const { data: code, error } = await CLOUD.sb.rpc('wd_make_invite', { p_wedding: CLOUD.wid, p_access: UI.invAccess, p_note: null });
   if (error) return toast(error.message);
+  cloudMembers();
   const msg = `You're invited to help plan ${S.details.couple || 'our wedding'} on The Wedding Desk. Open ${SITE}, sign in with your email, and enter invite code ${code}`;
   UI.invMsg = msg;
   sheet(`<h4>Invite Code</h4><div class="lead">${ACCESS[UI.invAccess][0]} · works once · lasts 14 days</div>
@@ -2362,6 +2377,7 @@ async function cloudAct(ds) {
   if (ds.act === 'member') return memberSheet(ds.u);
   if (ds.act === 'memacc') { const { error } = await CLOUD.sb.from('members').update({ access: ds.v }).eq('wedding_id', CLOUD.wid).eq('user_id', ds.u); if (error) return toast(error.message); await cloudMembers(); toast('Access updated'); return memberSheet(ds.u); }
   if (ds.act === 'memdel') return confirmBox('Remove This Person?', 'They won’t see your wedding any more. You can invite them again later.', 'Remove', async () => { const { error } = await CLOUD.sb.from('members').delete().eq('wedding_id', CLOUD.wid).eq('user_id', ds.u); if (error) return toast(error.message); await cloudMembers(); closeSheet(); toast('Removed'); });
+  if (ds.act === 'invdel') return confirmBox('Cancel This Invite?', 'The code will stop working. You can make a new one any time.', 'Cancel Invite', async () => { const { error } = await CLOUD.sb.from('invites').delete().eq('code', ds.c); if (error) return toast(error.message); await cloudMembers(); toast('Invite cancelled'); });
   if (ds.act === 'myrole') return myRoleSheet();
   if (ds.act === 'setrole') { const { error } = await CLOUD.sb.from('members').update({ role: ds.v }).eq('wedding_id', CLOUD.wid).eq('user_id', CLOUD.user.id); if (error) return toast('Couldn’t change your role'); await cloudMembers(); S.role = ds.v; toast(`You’re now ${ROLE(ds.v)}`); return myRoleSheet(); }
   if (ds.act === 'signout') return confirmBox('Sign Out?', 'Your wedding stays saved. Sign in again any time with your email.', 'Sign Out', cloudSignOut);
