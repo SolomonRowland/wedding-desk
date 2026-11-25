@@ -1,6 +1,6 @@
 -- The Wedding Desk: sign-in, roles and shared wedding data
 -- Paste this whole file into Supabase > SQL Editor > New query, then click Run.
--- Safe to run more than once. Version 2 (Nov 2026).
+-- Safe to run more than once. Version 3 (Nov 2026).
 
 -- 1. Tables ---------------------------------------------------------------
 create table if not exists public.weddings (
@@ -25,7 +25,7 @@ create table if not exists public.members (
 );
 
 -- Invite codes the Bride or Groom hands out. One code can be used once.
--- access: owner = full control (for your fiance), editor = can change the plan, viewer = can look.
+-- access: owner = full control (for the Bride and Groom), editor = can change the plan, viewer = can look.
 create table if not exists public.invites (
   code text primary key,
   wedding_id uuid not null references public.weddings(id) on delete cascade,
@@ -112,6 +112,9 @@ declare w uuid; em text;
 begin
   if auth.uid() is null then raise exception 'Sign in first'; end if;
   if p_my_role not in ('bride','groom') then raise exception 'Only the Bride or Groom can start a wedding'; end if;
+  if length(trim(coalesce(p_my_name,''))) = 0 then raise exception 'Add your name'; end if;
+  -- one person can't fill the database with weddings
+  if (select count(*) from members where user_id = auth.uid() and access = 'owner') >= 3 then raise exception 'You already have 3 weddings. Leave one before starting another.'; end if;
   select email into em from auth.users where id = auth.uid();
   insert into weddings(name, created_by) values (coalesce(nullif(trim(p_name),''),'Our Wedding'), auth.uid()) returning id into w;
   insert into members(wedding_id, user_id, name, email, role, access) values (w, auth.uid(), trim(p_my_name), em, p_my_role, 'owner');

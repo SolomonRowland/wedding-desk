@@ -1,0 +1,78 @@
+"""Privacy Policy: one source, used in the app (src/legal.json) and as a web page (privacy.html).
+
+  python3 src/legal.py        rewrites src/legal.json and privacy.html; then run build.py
+"""
+import json, os
+B = os.path.dirname(os.path.abspath(__file__)) + '/'
+UPDATED = 'November 25, 2026'
+# Fill these in, then rebuild. Until then they show highlighted in the app and on the pages.
+OWNER = '<mark>[Business legal name]</mark>'
+EMAIL = '<mark>[contact email]</mark>'
+STATE = '<mark>[State]</mark>'
+
+PRIVACY = f"""
+<p>The Wedding Desk is a wedding planning app run by {OWNER} ("we", "us"). This policy explains what information the app handles, where it is kept, and the choices you have. We wrote it to be read, not skimmed past.</p>
+
+<h3>The short version</h3>
+<ul>
+<li>Your wedding plan is saved to your account, so you and the people you invite see the same plan. A copy is kept on your device so it works without a connection.</li>
+<li>There are no ads, no tracking and no analytics in the app, and we never sell or rent your information.</li>
+<li>Vendor logins and passwords you save in the app stay on your device. They are never uploaded, exported to Excel or PDF, or shown to anyone you share with.</li>
+</ul>
+
+<h3>Information you put in the app</h3>
+<p>You may enter wedding details, tasks, budget and payments, vendors, and guest names with phone numbers, emails, addresses, meals and RSVPs. It is stored with your account so it can be shared with the people you invite, and a copy is kept in your browser's storage on your device.</p>
+<p>When you text, email or call a guest or vendor from the app, the message is written for you and then opened in your own phone's messaging, email or phone app. It is sent by you, from your account, not by us.</p>
+<p>You are responsible for having the right to keep your guests' contact details, and for using them only for your wedding.</p>
+
+<h3>Your account and shared plan</h3>
+<p>To use the app you create an account with your name, email address and a password, and choose your role in the wedding (for example Bride, Groom or Maid of Honor). Your password is stored only in scrambled (hashed) form; we cannot read it. Your account and plan are stored with our database provider, Supabase. The app does not send you email.</p>
+<p>Only people you invite can see your plan, at the access level you give them (owner, editor or viewer). Vendor logins and passwords are removed before anything is uploaded.</p>
+
+<h3>Hosting and technical data</h3>
+<p>The app is hosted on GitHub Pages. Like most web hosts, GitHub may log basic technical information such as IP addresses to keep the service running and secure. The app does not set advertising or tracking cookies.</p>
+
+<h3>Who we share information with</h3>
+<p>Only the service providers named above (Supabase and GitHub), and only to run the app. We may also disclose information if the law requires it. We do not sell, rent or trade personal information.</p>
+
+<h3>Keeping and deleting your information</h3>
+<ul>
+<li><b>On your device:</b> in Settings, tap Start My Own Wedding to clear the example, or clear your browser's site data to remove everything.</li>
+<li><b>Your account:</b> signing out removes the plan from that device. Email us at {EMAIL} to get a copy of your information or to have your account and shared plan deleted. We respond within 30 days.</li>
+</ul>
+
+<h3>Children</h3>
+<p>The Wedding Desk is meant for adults planning a wedding. It is not directed to children under 13, and we do not knowingly collect their information.</p>
+
+<h3>Security</h3>
+<p>We use encrypted connections (HTTPS), row-level access rules on shared plans, and keep sensitive vendor logins on your device only. No system is perfectly secure, so please keep your device locked and your email account protected.</p>
+
+<h3>Changes</h3>
+<p>If we change this policy, we will update the date above and, for important changes, let signed-in users know in the app.</p>
+
+<h3>Contact</h3>
+<p>Questions or requests: {EMAIL}.</p>
+"""
+
+DOCS = {'privacy': {'title': 'Privacy Policy', 'updated': UPDATED, 'html': PRIVACY.strip()}}
+json.dump(DOCS, open(B + 'legal.json', 'w'), ensure_ascii=False)
+
+PAGE = '''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title} · The Wedding Desk</title><meta name="robots" content="index,follow">
+<style>
+@font-face{{font-family:Cormorant;font-weight:600;src:url(fonts/cormorant-latin-600-normal.woff2) format('woff2')}}
+@font-face{{font-family:Inter;font-weight:400;src:url(fonts/inter-latin-400-normal.woff2) format('woff2')}}
+@font-face{{font-family:Inter;font-weight:600;src:url(fonts/inter-latin-600-normal.woff2) format('woff2')}}
+:root{{--ink:#3F2A29;--muted:#7A6260;--deep:#953735;--plum:#93566A;--petal:#FBF3F2;--line:#EEDCDB}}
+body{{margin:0;background:var(--petal);color:var(--ink);font:400 16px/1.6 Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}}
+main{{max-width:680px;margin:0 auto;padding:32px 20px 64px}}
+a{{color:var(--plum)}} .eb{{font:600 12px/1 system-ui,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:var(--plum)}}
+h1{{font:600 40px/1.1 Cormorant,Georgia,serif;color:var(--deep);margin:10px 0 6px}} h3{{font:600 24px/1.2 Cormorant,Georgia,serif;color:var(--deep);margin:28px 0 6px}}
+.up{{color:var(--muted);font-size:14px;margin-bottom:20px}} li{{margin:4px 0}} mark{{background:#FBEBDD;color:#9A4A0A;padding:0 3px;border-radius:3px}}
+footer{{margin-top:40px;padding-top:16px;border-top:1px solid var(--line);font-size:14px;color:var(--muted)}}
+</style></head><body><main><div class="eb">The Wedding Desk</div><h1>{title}</h1><div class="up">Last updated {updated}</div>
+{html}
+<footer><a href="./">Open The Wedding Desk</a></footer></main></body></html>
+'''
+open(B + '../privacy.html', 'w').write(PAGE.format(**DOCS['privacy']))
+print('ok')

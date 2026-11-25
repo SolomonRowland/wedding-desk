@@ -1,0 +1,13 @@
+const {chromium}=require('playwright');const {spawn}=require('child_process');const {makeDB,attach}=require('./fake-supabase.js');
+const srv=spawn('python3',['-m','http.server','8772','--directory',__dirname+'/../build/site'],{stdio:'ignore'});
+(async()=>{await new Promise(r=>setTimeout(r,800));const b=await chromium.launch();const db=makeDB();const W=ms=>new Promise(r=>setTimeout(r,ms));
+const ctx=await b.newContext({viewport:{width:390,height:844},deviceScaleFactor:2,serviceWorkers:'block'});const p=await ctx.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));await attach(ctx,db,p);await p.goto('http://localhost:8772/index.html');await W(800);
+await p.screenshot({path:__dirname+'/../build/sign-in-1-create.png'});
+await p.fill('#g-name0','Sol');await p.fill('#g-email','a@x.com');await p.fill('#g-pw','password123');await p.click('[data-g=showpw]');console.log('show ->',await p.getAttribute('#g-pw','type'));await p.click('[data-g=signup]');await W(500);console.log('after signup:',await p.textContent('#gate h2'));
+await p.click('[data-g=signout]');await W(1200);
+await p.click('[data-g=mode][data-v=have]');await W(100);await p.screenshot({path:__dirname+'/../build/sign-in-2-signin.png'});
+await p.fill('#g-email','a@x.com');await p.fill('#g-pw','wrong');await p.click('[data-g=signin]');await W(400);console.log('wrong:',await p.textContent('.gerr'));
+await p.fill('#g-pw','password123');await p.click('[data-g=signin]');await W(500);console.log('right:',await p.textContent('#gate h2'),await p.inputValue('#g-name'));
+await p.click('[data-g=signout]');await W(1200);await p.fill('#g-name0','X');await p.fill('#g-email','a@x.com');await p.fill('#g-pw','password123');await p.click('[data-g=signup]');await W(400);console.log('dup:',await p.textContent('.gerr'));
+console.log('note:',await p.textContent('.gnote'));
+console.log('errs',errs);await b.close();srv.kill()})();

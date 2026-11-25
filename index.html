@@ -647,8 +647,8 @@ body:has(#layer .scrim) { overflow: hidden; }
   .app { max-width: none; margin: 0 0 0 248px; border-radius: 0 !important; box-shadow: none; min-height: 100vh !important; background: var(--petal); overflow: visible !important; }
   .app > main { max-width: 1080px; margin-inline: auto; }
   .app > .top { max-width: 1024px; margin-inline: max(28px, calc((100% - 1024px) / 2)); }
-  .top { padding-inline: 28px; border-radius: 0 0 26px 26px; }
-  .top.home { margin-top: 24px; border-radius: 26px; padding: 26px 30px 22px; }
+  .top { margin-top: 24px; border-radius: 26px; padding: 22px 30px 20px; }
+  .top.home { padding: 26px 30px 22px; }
   .top.home .act { display: none; }
   .top h1 { font-size: 34px; }
   main { padding: 6px 28px 64px !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
@@ -685,6 +685,7 @@ body:has(#layer .scrim) { overflow: hidden; }
   #gate .gwrap { padding-top: 6vh; }
   #gate .gtop { border-radius: 26px 26px 0 0; }
 }
+.toast { width: max-content; max-width: calc(100vw - 32px); }
 @media (min-width: 1024px) and (hover: hover) { .card .row:hover, button.row:hover { background: rgba(246,227,225,.45); } }
 </style>
 
@@ -879,7 +880,7 @@ function stats() {
 const TABS = [['home', 'Home'], ['plan', 'Plan'], ['guests', 'Guests'], ['money', 'Money'], ['vendors', 'Vendors']];
 const UI = { tab: 'home', plan: 'tasks', planFilter: 'open', showDone: false, share: { scope: 'open', owner: 'Everyone' }, guests: 'list', gFilter: 'All', q: '', selecting: false, sel: new Set(), money: 'budget', vend: 'vendors', openQ: null };
 
-const LEGAL = {"privacy":{"title":"Privacy Policy","updated":"November 22, 2026","html":"<p>The Wedding Desk is a wedding planning app run by <mark>[Business legal name]</mark> (\"we\", \"us\"). This policy explains what information the app handles, where it is kept, and the choices you have. We wrote it to be read, not skimmed past.</p>\n\n<h3>The short version</h3>\n<ul>\n<li>Your wedding plan is saved on your own device unless you choose to sign in and share it.</li>\n<li>There are no ads, no tracking and no analytics in the app, and we never sell or rent your information.</li>\n<li>Vendor logins and passwords you save in the app stay on your device. They are never uploaded, exported to Excel or PDF, or shown to anyone you share with.</li>\n</ul>\n\n<h3>Information you put in the app</h3>\n<p>You may enter wedding details, tasks, budget and payments, vendors, and guest names with phone numbers, emails, addresses, meals and RSVPs. Without sign-in, all of this is stored only in your browser's storage on your device. We cannot see it, and it is not sent to us.</p>\n<p>When you text, email or call a guest or vendor from the app, the message is written for you and then opened in your own phone's messaging, email or phone app. It is sent by you, from your account, not by us.</p>\n<p>You are responsible for having the right to keep your guests' contact details, and for using them only for your wedding.</p>\n\n<h3>If you sign in and share your plan</h3>\n<p>Signing in is optional. If you sign in, we collect your email address, the name you give, and your role in the wedding (for example Bride, Groom or Maid of Honor). Your shared plan is stored with our database provider, Supabase, so everyone you invite can see the same plan. Sign-in codes are sent to your email by our email provider.</p>\n<p>Only people you invite can see your plan, at the access level you give them (owner, editor or viewer). Vendor logins and passwords are removed before anything is uploaded.</p>\n\n<h3>Hosting and technical data</h3>\n<p>The app is hosted on GitHub Pages. Like most web hosts, GitHub may log basic technical information such as IP addresses to keep the service running and secure. The app does not set advertising or tracking cookies.</p>\n\n<h3>Who we share information with</h3>\n<p>Only the service providers named above (Supabase, our email provider and GitHub), and only to run the app. We may also disclose information if the law requires it. We do not sell, rent or trade personal information.</p>\n\n<h3>Keeping and deleting your information</h3>\n<ul>\n<li><b>On your device:</b> in Settings, tap Start My Own Wedding to clear the example, or clear your browser's site data to remove everything.</li>\n<li><b>Signed in:</b> email us at <mark>[contact email]</mark> to get a copy of your information or to have your account and shared plan deleted. We respond within 30 days.</li>\n</ul>\n\n<h3>Children</h3>\n<p>The Wedding Desk is meant for adults planning a wedding. It is not directed to children under 13, and we do not knowingly collect their information.</p>\n\n<h3>Security</h3>\n<p>We use encrypted connections (HTTPS), row-level access rules on shared plans, and keep sensitive vendor logins on your device only. No system is perfectly secure, so please keep your device locked and your email account protected.</p>\n\n<h3>Changes</h3>\n<p>If we change this policy, we will update the date above and, for important changes, let signed-in users know in the app.</p>\n\n<h3>Contact</h3>\n<p>Questions or requests: <mark>[contact email]</mark>.</p>"}};
+const LEGAL = {"privacy":{"title":"Privacy Policy","updated":"November 25, 2026","html":"<p>The Wedding Desk is a wedding planning app run by <mark>[Business legal name]</mark> (\"we\", \"us\"). This policy explains what information the app handles, where it is kept, and the choices you have. We wrote it to be read, not skimmed past.</p>\n\n<h3>The short version</h3>\n<ul>\n<li>Your wedding plan is saved to your account, so you and the people you invite see the same plan. A copy is kept on your device so it works without a connection.</li>\n<li>There are no ads, no tracking and no analytics in the app, and we never sell or rent your information.</li>\n<li>Vendor logins and passwords you save in the app stay on your device. They are never uploaded, exported to Excel or PDF, or shown to anyone you share with.</li>\n</ul>\n\n<h3>Information you put in the app</h3>\n<p>You may enter wedding details, tasks, budget and payments, vendors, and guest names with phone numbers, emails, addresses, meals and RSVPs. It is stored with your account so it can be shared with the people you invite, and a copy is kept in your browser's storage on your device.</p>\n<p>When you text, email or call a guest or vendor from the app, the message is written for you and then opened in your own phone's messaging, email or phone app. It is sent by you, from your account, not by us.</p>\n<p>You are responsible for having the right to keep your guests' contact details, and for using them only for your wedding.</p>\n\n<h3>Your account and shared plan</h3>\n<p>To use the app you create an account with your name, email address and a password, and choose your role in the wedding (for example Bride, Groom or Maid of Honor). Your password is stored only in scrambled (hashed) form; we cannot read it. Your account and plan are stored with our database provider, Supabase. The app does not send you email.</p>\n<p>Only people you invite can see your plan, at the access level you give them (owner, editor or viewer). Vendor logins and passwords are removed before anything is uploaded.</p>\n\n<h3>Hosting and technical data</h3>\n<p>The app is hosted on GitHub Pages. Like most web hosts, GitHub may log basic technical information such as IP addresses to keep the service running and secure. The app does not set advertising or tracking cookies.</p>\n\n<h3>Who we share information with</h3>\n<p>Only the service providers named above (Supabase and GitHub), and only to run the app. We may also disclose information if the law requires it. We do not sell, rent or trade personal information.</p>\n\n<h3>Keeping and deleting your information</h3>\n<ul>\n<li><b>On your device:</b> in Settings, tap Start My Own Wedding to clear the example, or clear your browser's site data to remove everything.</li>\n<li><b>Your account:</b> signing out removes the plan from that device. Email us at <mark>[contact email]</mark> to get a copy of your information or to have your account and shared plan deleted. We respond within 30 days.</li>\n</ul>\n\n<h3>Children</h3>\n<p>The Wedding Desk is meant for adults planning a wedding. It is not directed to children under 13, and we do not knowingly collect their information.</p>\n\n<h3>Security</h3>\n<p>We use encrypted connections (HTTPS), row-level access rules on shared plans, and keep sensitive vendor logins on your device only. No system is perfectly secure, so please keep your device locked and your email account protected.</p>\n\n<h3>Changes</h3>\n<p>If we change this policy, we will update the date above and, for important changes, let signed-in users know in the app.</p>\n\n<h3>Contact</h3>\n<p>Questions or requests: <mark>[contact email]</mark>.</p>"}};
 function legalSheet(k) { const d = LEGAL[k]; if (!d) return; sheet(`<h4>${esc(d.title)}</h4><div class="note" style="margin:-2px 0 10px">Last updated ${esc(d.updated)}</div><div class="legaltx">${d.html}</div>`); }
 document.addEventListener('click', e => { const l = e.target.closest('[data-legal]'); if (l) { e.stopPropagation(); legalSheet(l.dataset.legal); } }, true);
 
@@ -1024,7 +1025,7 @@ function renderPlan() {
     const groups = {}; list.forEach(t => { const d = D(t['Due Date']); const k = !d ? 'No date yet' : OV(t) ? 'Overdue' : d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); (groups[k] = groups[k] || []).push(t); });
     const doneL = S.tasks.filter(t => !OPEN(t)).sort((a, b) => (b.doneOn || '').localeCompare(a.doneOn || '') || (b['Due Date'] || '').localeCompare(a['Due Date'] || ''));
     body = `<div class="filters">${[['open', 'All to Do', openT.length], ['over', 'Overdue', openT.filter(OV).length], ['month', 'Next 30 Days', openT.filter(MO).length]].map(([k, l, n]) => `<button class="chip" data-pf="${k}" aria-pressed="${f === k}">${l}<span class="n">${n}</span></button>`).join('')}</div>
-    <section class="card flush">${Object.entries(groups).map(([k, ts]) => `<div class="grp" ${k === 'Overdue' ? 'style="color:var(--alert)"' : ''}>${k}</div>${ts.map(taskRow).join('')}`).join('') || '<div class="empty">Nothing here. Nice work.</div>'}</section>
+    <section class="card flush">${Object.entries(groups).map(([k, ts]) => `<div class="grp" ${k === 'Overdue' ? 'style="color:var(--alert)"' : ''}>${k}</div>${ts.map(taskRow).join('')}`).join('') || `<div class="empty">${S.tasks.length ? 'Nothing here. Nice work.' : 'No tasks yet. Tap Add to write your first one.'}</div>`}</section>
     <section class="card flush donecard"><button class="donehead" data-act="toggledone" aria-expanded="${UI.showDone}"><span class="check on">${I.check}</span>Completed<span class="badge">${doneL.length}</span><span class="chev">${I.chev}</span></button>${UI.showDone ? doneL.map(taskRow).join('') : ''}</section>`;
   } else if (UI.plan === 'dayof') {
     const ev = S.planner.slice().sort((a, b) => (a.Date + a.Time).localeCompare(b.Date + b.Time));
@@ -1078,7 +1079,7 @@ function renderGuests() {
     const pill = r => r === 'Accepted' ? 'pill done' : r === 'Declined' ? 'pill red' : r === 'Waitlist' ? 'pill soft' : 'pill rose';
     body = `
     ${s.inv ? `<section class="rsvpbar"><div class="hd"><b>${s.inv} still to reply</b><span class="note">${S.people.filter(p => p.RSVP === 'Invited' && p.rsvpAsked).length} asked so far</span></div><div class="acts"><button class="btn plum" data-act="rsvp" data-mode="sms">${I.sms} Text</button><button class="btn plum" data-act="rsvp" data-mode="email">${I.mail} Email</button><button class="btn alt" data-act="replies">${I.check} Replies</button></div></section>` : ''}
-    <section class="card flush"><div class="sh"><button class="selbtn ${UI.selecting ? 'on' : ''}" data-act="select">${UI.selecting ? 'Done' : I.select + ' Select Guests'}</button><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + esc(p.Table) : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || '<div class="empty">No guests match.</div>'}</section>`;
+    <section class="card flush"><div class="sh"><button class="selbtn ${UI.selecting ? 'on' : ''}" data-act="select">${UI.selecting ? 'Done' : I.select + ' Select Guests'}</button><h3>${F === 'All' ? 'Everyone' : esc(F)} <span class="cnt">${list.length}</span></h3></div>${list.map(([p, i]) => `<button class="row" data-${UI.selecting ? 'pick' : 'guest'}="${i}">${UI.selecting ? `<span class="check sq ${UI.sel.has(i) ? 'on' : ''}">${I.check}</span>` : `<div class="avatar ${p.Side === 'Bride' ? 'b' : ''}">${initials(p.Name)}</div>`}<div class="main"><div class="t">${esc(p.Name)}</div><div class="m">${esc(p['Individual Role'] && p['Individual Role'] !== 'Guest' ? p['Individual Role'] : p.Relationship)}${p.Table ? ' · Table ' + esc(p.Table) : ''}${p['Meal Choice'] ? ' · ' + esc(p['Meal Choice']) : ''}</div></div><span class="${pill(p.RSVP)}">${p.RSVP === 'Invited' ? (p.rsvpAsked ? 'Asked' : 'Awaiting') : esc(p.RSVP)}</span></button>`).join('') || `<div class="empty">${S.people.length ? 'No guests match.' : 'No guests yet. Tap Add, or import your list from Excel in Settings.'}</div>`}</section>`;
   } else if (UI.guests === 'seating') {
     const att = S.people.filter(p => !['Declined', 'Waitlist'].includes(p.RSVP));
     const tables = [...new Set(att.map(p => p.Table).filter(Boolean))].sort((a, b) => a - b);
@@ -1695,7 +1696,8 @@ const FAQ = [
   ['Can I search everything at once?', 'Yes. Tap the magnifying glass on Home to find any guest, vendor, task, schedule event, place or payment.'],
   ['How do I share my task list with someone?', 'On Plan, tap the share icon at the top. Choose what to include, then Save as PDF to attach to a text or email, Print it, or Copy for a text to paste a quick version into a message.'],
   ['What is the difference between Booked and Paid?', 'Booked is what you have agreed to pay vendors. Paid is money already sent. The gap between them is what you still owe.'],
-  ['Can my fiancé or planner use this too?', 'Your plan is saved privately on this phone, with no ads or vendor sales calls. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your fiancé can import it on their phone.'],
+  ['Can my fiancé or planner use this too?', () => CLOUD.on ? 'Yes. In Settings, under Who Can See This Plan, tap Invite Someone and send them the code. They create their own account, enter the code, and see the same plan. You choose whether each person has full control, can edit, or can only look. There are no ads or vendor sales calls.' : 'Your plan is saved privately on this phone, with no ads or vendor sales calls. To share, use the share icon on any page, or Download Excel in Settings and send the file. Your fiancé can import it on their phone.'],
+  ['Does it work without a connection?', () => CLOUD.on ? 'Yes. Once you have signed in on a phone, the plan opens and saves there even with no signal, which helps at venues. Changes sync to everyone else when you are back online.' : 'Yes. Your plan is saved on this phone, so it works anywhere.'],
   ['How long is the tour, and can I skip around?', 'It runs about two and a half minutes, with a narrator and soft music, so turn your sound on. Tap any chapter under the video, like Guests or Money, to jump straight to it, and pause any time.'],
   ['Can I stop people from being contacted at certain times?', 'Yes. Open anyone\'s card (a guest, vendor or key contact) and tap Contact Window. Pick Any Time, Set Hours or Wedding Day Only, and turn on Off-Limits on the Wedding Day if you like. Outside that window the Call, Text and Email buttons pause and point to the planner or day-of contact instead, and group texts leave that person out. Settings has a one-tap button to keep the bride and groom off-limits on the wedding day.'],
   ['Is there a spreadsheet version?', 'Yes. The Wedding Desk packet includes an Excel template, an example workbook and a user guide. The tabs match the app (Decisions, Tasks, Guests, Schedule and so on), so you can start in Excel and import it here, or download your plan from here and keep working in Excel on a computer.'],
@@ -1767,7 +1769,7 @@ function helpSheet(play) {
   <div class="sect">Starter Steps</div>
   <div class="steps">${steps.map(([a, b, tab, sub], k) => `<button data-act="hgo" data-tab="${tab}" data-sub="${sub}"><span class="n">${k + 1}</span><span class="tx"><b>${a}</b><span>${b}</span></span><span class="go">Go</span></button>`).join('')}</div>
   <div class="sect">Common Questions</div>
-  <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(a)}</p></details>`).join('')}</div>
+  <div class="faq">${FAQ.map(([q, a]) => `<details><summary>${esc(q)}</summary><p>${esc(typeof a === 'function' ? a() : a)}</p></details>`).join('')}</div>
   <button class="btn alt sm" data-act="settings">${I.gear} Settings: wedding details, smart steps and more</button>`);
   wireVideo(play);
 }
@@ -2156,7 +2158,7 @@ document.addEventListener('click', e => {
   if (ds.act === 'reachanyway') { UI.reachOk = true; closeSheet(); return contactAction(ds.a, ds.ck); }
   if (ds.act === 'quietday') { const n = S.people.filter(p => ['Bride', 'Groom'].includes(p['Individual Role'])); n.forEach(p => { const k = reachName(p.Name); S.reach[k] = { ...(S.reach[k] || { mode: 'any' }), off: true }; }); save(); toast(n.length ? `${n.map(p => firstName(p.Name)).join(' & ')} are off-limits on the wedding day` : 'Add the bride and groom to the guest list first'); return settingsSheet(); }
   if (ds.act === 'sheetback') return sheetBack();
-  if (['invite', 'invdel', 'invacc', 'invmake', 'invshare', 'member', 'memacc', 'memdel', 'myrole', 'setrole', 'signout'].includes(ds.act)) return cloudAct(ds);
+  if (['invite', 'invdel', 'invacc', 'invmake', 'invshare', 'member', 'memacc', 'memdel', 'myrole', 'setrole', 'signout', 'mypw', 'savepw'].includes(ds.act)) return cloudAct(ds);
   if (ds.act === 'impmode') { PENDING.mode = ds.v; return importSheet(); }
   if (ds.act === 'impgo') return PENDING?.mode === 'replace' ? confirmBox('Replace Everything?', 'Everything in the app is swapped for what’s in this Excel file. Tabs left blank in the file are cleared too.', 'Replace', applyImport) : applyImport();
   if (ds.act === 'savesettings') return saveSettings();
@@ -2251,6 +2253,29 @@ function applyRemote(data) {
   CLOUD.applying = true; save(); CLOUD.applying = false;
   if (!layer.innerHTML) render();
 }
+/* the last copy this device and the server agreed on; lets the plan open offline and merge later */
+const SYNC_KEY = 'wd-cloud-sync', ME_KEY = 'wd-cloud-me';
+function cloudMark() { try { localStorage.setItem(SYNC_KEY, JSON.stringify({ wid: CLOUD.wid, ver: CLOUD.ver, base: CLOUD.base })); } catch (e) {} }
+function cloudSaved() { try { const x = JSON.parse(localStorage.getItem(SYNC_KEY) || 'null'), m = JSON.parse(localStorage.getItem(ME_KEY) || 'null'); return x && m && x.wid === m.wedding_id && x.base ? { sync: x, me: m } : null; } catch (e) { return null; } }
+function cloudOffline() {
+  const c = cloudSaved(); if (!c || !localStorage.getItem(KEY)) return false;
+  CLOUD.offline = true; CLOUD.me = c.me; CLOUD.user = CLOUD.user || { id: c.me.user_id, email: c.me.email }; CLOUD.members = CLOUD.members.length ? CLOUD.members : [c.me];
+  CLOUD.ver = c.sync.ver; CLOUD.base = c.sync.base; S.role = c.me.role;
+  if (CLOUD.sb) { CLOUD.wid = c.me.wedding_id; CLOUD.pending = c.me.access !== 'viewer' && JSON.stringify(cloudData(S)) !== JSON.stringify(c.sync.base); }
+  gateClose(); render();
+  setTimeout(() => toast(c.me.access === 'viewer' ? 'You’re offline. Showing the last saved copy.' : 'You’re offline. Changes save on this phone and sync when you’re back online.'), 400);
+  return true;
+}
+async function cloudResume() {
+  if (!CLOUD.offline || CLOUD.resuming) return; if (!CLOUD.sb) return location.reload();
+  CLOUD.resuming = true;
+  try { const { data: { session } } = await CLOUD.sb.auth.getSession();
+    if (session) { CLOUD.user = session.user; const { data: ms, error } = await CLOUD.sb.from('members').select('*').eq('user_id', session.user.id);
+      if (!error) { const m = (ms || []).find(x => x.wedding_id === CLOUD.me.wedding_id); if (m) { await cloudEnter(m, true); if (!CLOUD.offline) toast('Back online. Everything is synced.'); } else { cloudForget(); location.reload(); } } }
+  } catch (e) {}
+  CLOUD.resuming = false;
+}
+function cloudForget() { try { localStorage.removeItem('wd-cloud-wid'); localStorage.removeItem(SYNC_KEY); localStorage.removeItem(ME_KEY); localStorage.removeItem(KEY); } catch (e) {} }
 function cloudQueue() {
   if (!CLOUD.wid || CLOUD.applying) return;
   if (CLOUD.me.access === 'viewer') {
@@ -2263,7 +2288,7 @@ async function cloudPush() {
   if (!CLOUD.wid || !CLOUD.pending) return;
   const data = cloudData(S);
   const { data: v, error } = await CLOUD.sb.rpc('wd_save', { p_wedding: CLOUD.wid, p_data: data, p_version: CLOUD.ver });
-  if (!error) { CLOUD.ver = v; CLOUD.base = data; CLOUD.pending = false; return; }
+  if (!error) { CLOUD.ver = v; CLOUD.base = data; CLOUD.pending = false; cloudMark(); if (CLOUD.offline) cloudResume(); return; }
   if (/conflict/.test(error.message)) { await cloudPull(true); return; }
   CLOUD.timer = setTimeout(cloudPush, 15000); // offline or busy: try again soon
 }
@@ -2278,10 +2303,10 @@ function cloudMerge(row, thenPush) {
   const mine = cloudData(S), base = CLOUD.base || {}, theirs = row.data || {}, out = {};
   const changedHere = CLOUD.pending ? new Set(Object.keys({ ...mine, ...base }).filter(k => JSON.stringify(mine[k]) !== JSON.stringify(base[k]))) : new Set();
   for (const k of new Set([...Object.keys(theirs), ...Object.keys(mine)])) out[k] = changedHere.has(k) ? mine[k] : theirs[k];
-  CLOUD.ver = row.version; CLOUD.base = theirs; applyRemote(out);
+  CLOUD.ver = row.version; CLOUD.base = theirs; cloudMark(); applyRemote(out);
   const who = CLOUD.members.find(m => m.user_id === row.updated_by);
   if (who && row.updated_by !== CLOUD.user.id) toast(`Updated by ${who.name.split(' ')[0]}`);
-  if (changedHere.size) { CLOUD.pending = true; cloudPush(); }
+  if (changedHere.size) { CLOUD.pending = true; cloudPush(); } else CLOUD.pending = false;
 }
 async function cloudMembers() {
   const { data } = await CLOUD.sb.from('members').select('*').eq('wedding_id', CLOUD.wid).order('joined_at');
@@ -2290,28 +2315,33 @@ async function cloudMembers() {
   if (CLOUD.me && CLOUD.me.access === 'owner') { const { data: iv } = await CLOUD.sb.from('invites').select('code,access,created_at,expires_at').eq('wedding_id', CLOUD.wid).is('used_by', null).gt('expires_at', new Date().toISOString()).order('created_at'); CLOUD.invites = iv || []; }
   if (SH_CUR && SH_CUR.fn === 'settingsSheet' && document.querySelector('.sheet')) settingsSheet();
 }
-async function cloudEnter(m) {
-  CLOUD.me = m; CLOUD.wid = m.wedding_id; try { localStorage.setItem('wd-cloud-wid', m.wedding_id); } catch (e) {}
+async function cloudEnter(m, quiet) {
   const { data: row, error } = await CLOUD.sb.from('wedding_state').select('*').eq('wedding_id', m.wedding_id).single();
-  if (error || !row) return gateMsg('We couldn’t open your wedding. Check your connection and try again.');
+  if (error || !row) { if (quiet) return; CLOUD.me = m; try { localStorage.setItem(ME_KEY, JSON.stringify(m)); } catch (e) {} return cloudOffline() || gateMsg('We couldn’t open your wedding. Check your connection and try again.'); }
+  const saved = cloudSaved(), stale = !!saved && saved.sync.wid !== m.wedding_id; /* stale: this phone still holds a different wedding */
+  CLOUD.me = m; CLOUD.wid = m.wedding_id; CLOUD.offline = false;
+  try { localStorage.setItem('wd-cloud-wid', m.wedding_id); localStorage.setItem(ME_KEY, JSON.stringify(m)); } catch (e) {}
   await cloudMembers();
-  CLOUD.ver = row.version;
   if (!row.data || !Object.keys(row.data).length) {
-    if (m.access !== 'viewer') { if (!S.own) startFresh(); S.role = m.role; CLOUD.base = {}; CLOUD.pending = true; await cloudPush(); }
-  } else { CLOUD.base = row.data; applyRemote(row.data); }
+    CLOUD.ver = row.version;
+    if (m.access !== 'viewer') { if (!S.own || stale) startFresh(); S.role = m.role; CLOUD.base = {}; CLOUD.pending = true; await cloudPush(); }
+  } else if (saved && !stale && m.access !== 'viewer' && JSON.stringify(cloudData(S)) !== JSON.stringify(saved.sync.base)) {
+    /* this phone has changes the server never got (made offline, or the app closed first): merge, don't overwrite */
+    CLOUD.ver = saved.sync.ver; CLOUD.base = saved.sync.base; CLOUD.pending = true; cloudMerge(row, true);
+  } else { CLOUD.ver = row.version; CLOUD.base = row.data; cloudMark(); applyRemote(row.data); }
   S.role = m.role;
   if (CLOUD.chan) CLOUD.sb.removeChannel(CLOUD.chan);
   CLOUD.chan = CLOUD.sb.channel('w-' + m.wedding_id)
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wedding_state', filter: 'wedding_id=eq.' + m.wedding_id }, p => { if (p.new && p.new.version > CLOUD.ver) cloudMerge(p.new); })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'members', filter: 'wedding_id=eq.' + m.wedding_id }, () => cloudMembers())
     .subscribe();
-  gateClose(); render();
+  const gated = !!document.getElementById('gate'); gateClose(); if (gated || !layer.innerHTML) render();
 }
 async function cloudAfterSignIn(session) {
   CLOUD.user = session.user; CLOUD.entering = true;
   if (!GATE.name && session.user.user_metadata && session.user.user_metadata.name) GATE.name = String(session.user.user_metadata.name).slice(0, 80);
   const { data: ms, error } = await CLOUD.sb.from('members').select('*').eq('user_id', CLOUD.user.id);
-  if (error) return gateMsg('We couldn’t reach The Wedding Desk. Check your connection and try again.');
+  if (error) return cloudOffline() || gateMsg('We couldn’t reach The Wedding Desk. Check your connection and try again.');
   let saved = null; try { saved = localStorage.getItem('wd-cloud-wid'); } catch (e) {}
   const m = (ms || []).find(x => x.wedding_id === saved) || (ms || [])[0];
   if (m) return cloudEnter(m);
@@ -2321,21 +2351,22 @@ function loadSupabase() { return window.supabase ? Promise.resolve() : new Promi
 async function cloudInit() {
   if (!cloudWanted()) return;
   CLOUD.on = true; gateOpen(); gateBusy('Opening your wedding…');
-  try { await loadSupabase(); } catch (e) { return gateMsg('You’re offline. Connect to the internet to sign in.', true); }
+  addEventListener('online', () => { if (CLOUD.offline) cloudResume(); else if (CLOUD.pending) cloudPush(); });
+  try { await loadSupabase(); } catch (e) { return cloudOffline() || gateMsg('You’re offline. Connect to the internet to sign in.', true); }
   CLOUD.sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
-  const { data: { session } } = await CLOUD.sb.auth.getSession();
+  CLOUD.sb.auth.onAuthStateChange(ev => { if (ev === 'PASSWORD_RECOVERY') { CLOUD.entering = true; gateNewPass(); } });
+  let session = null, failed = false;
+  try { const r = await CLOUD.sb.auth.getSession(); session = r.data.session; failed = !!r.error; } catch (e) { failed = true; }
   if (session && WD_RECOVERY) return gateNewPass();
   if (session) return cloudAfterSignIn(session);
+  if ((failed || navigator.onLine === false) && cloudOffline()) return;
   gateEmail();
-  addEventListener('online', () => { if (CLOUD.pending) cloudPush(); });
-  // the email link can finish sign-in in another tab; pick that up here too
-  CLOUD.sb.auth.onAuthStateChange((ev, ses) => { if (ev === 'PASSWORD_RECOVERY') { CLOUD.entering = true; return gateNewPass(); } if (ev === 'SIGNED_IN' && ses && document.getElementById('gate') && !CLOUD.wid && !CLOUD.entering) { CLOUD.entering = true; cloudAfterSignIn(ses); } });
-  document.addEventListener('visibilitychange', async () => { if (document.visibilityState !== 'visible' || CLOUD.wid || CLOUD.entering || !document.getElementById('g-code')) return; const { data: { session: s2 } } = await CLOUD.sb.auth.getSession(); if (s2) { CLOUD.entering = true; cloudAfterSignIn(s2); } });
 }
-document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && CLOUD.wid) cloudPull(false); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState !== 'visible') return; if (CLOUD.offline) cloudResume(); else if (CLOUD.wid) cloudPull(false); });
 
 /* ---------- the sign-in screens ---------- */
 const GATE = { email: '', name: '', role: '' };
+const HELP_MSG = 'This account isn’t ready to use yet. Ask the person who shared The Wedding Desk with you for help.';
 function gateOpen() { let g = document.getElementById('gate'); if (!g) { g = document.createElement('div'); g.id = 'gate'; document.body.appendChild(g); } document.body.classList.add('gated'); return g; }
 function gateClose() { document.getElementById('gate')?.remove(); document.body.classList.remove('gated'); }
 function gateShell(inner) { gateOpen().innerHTML = `<div class="gwrap"><div class="gtop"><div class="gmark">WD</div><div class="gname">The Wedding Desk</div><div class="gtag">Plan your wedding together</div></div><div class="gcard">${inner}</div></div>`; const f = document.querySelector('#gate input'); if (f) setTimeout(() => f.focus(), 60); }
@@ -2358,13 +2389,6 @@ function gateNewPass(err) {
   ${GPW.replace('__AC__', 'new-password').replace('__PH__', 'At least 8 characters')}
   ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="setpw">Save Password</button>`);
 }
-function gateSent(msg) { gateShell(`<h2>Check your email</h2><p>${msg}</p><button class="btn alt" data-g="back">Back to Sign In</button>`); }
-function gateCode(err) {
-  gateShell(`<h2>Check your email</h2><p>We sent an email to <b>${esc(GATE.email)}</b>. Tap <b>Sign in</b> in that email. If it shows a code instead, enter it below.</p>
-  <div class="field"><label for="g-code">Sign-in code</label><input id="g-code" class="gcode" inputmode="numeric" autocomplete="one-time-code" maxlength="10" placeholder="123456"></div>
-  ${err ? `<div class="gerr">${esc(err)}</div>` : ''}<button class="btn plum" data-g="verify">Sign In</button>
-  <div class="glinks"><button data-g="resend">Send another email</button><button data-g="other">Use a different email</button></div>`);
-}
 function gateProfile(err) {
   gateShell(`<h2>Welcome!</h2><p>Tell us who you are. Everyone in the wedding sees this.</p>
   <div class="field"><label for="g-name">Your name</label><input id="g-name" autocomplete="name" value="${esc(GATE.name)}" placeholder="First and last name"></div>
@@ -2382,7 +2406,6 @@ document.addEventListener('click', async e => {
   if (g === 'retry') return location.reload();
   if (g === 'mode') { GATE.email = gVal('g-email').toLowerCase() || GATE.email; if (document.getElementById('g-name0')) GATE.name = gVal('g-name0'); GATE.mode = b.dataset.v; return gateEmail(); }
   if (g === 'showpw') { const pw = document.getElementById('g-pw'); const show = pw.type === 'password'; pw.type = show ? 'text' : 'password'; b.textContent = show ? 'Hide' : 'Show'; return; }
-  if (g === 'back') { GATE.mode = 'have'; return gateEmail(); }
   if (g === 'signup' || g === 'signin') {
     GATE.email = gVal('g-email').toLowerCase(); const pw = document.getElementById('g-pw')?.value || '';
     if (g === 'signup') GATE.name = gVal('g-name0');
@@ -2397,11 +2420,11 @@ document.addEventListener('click', async e => {
     if (r.error) { CLOUD.entering = false; const m = r.error.message || '';
       if (/already|registered|exists/i.test(m)) { GATE.mode = 'have'; return gateEmail('There’s already an account with that email. Sign in instead.'); }
       if (/invalid login|credentials/i.test(m)) return gateEmail('That email and password don’t match. Check for typos and try again.');
-      if (/not confirmed/i.test(m)) return gateEmail('This account was made while email confirmation was on. Delete it in Supabase › Users and create it again.');
+      if (/not confirmed/i.test(m)) return gateEmail(HELP_MSG);
       if (/rate|seconds|too many/i.test(m)) return gateEmail('Too many tries. Please wait a minute and try again.');
       if (/password/i.test(m)) return gateEmail(m);
       return gateEmail('Something went wrong. ' + m); }
-    if (!r.data.session) { CLOUD.entering = false; GATE.mode = 'have'; return gateEmail('Your account was saved, but sign-in is waiting on a setting. Turn off “Confirm email” in Supabase, then sign in here.'); }
+    if (!r.data.session) { CLOUD.entering = false; GATE.mode = 'have'; return gateEmail(HELP_MSG); }
     return cloudAfterSignIn(r.data.session);
   }
   if (g === 'setpw') {
@@ -2411,14 +2434,6 @@ document.addEventListener('click', async e => {
     try { history.replaceState(null, '', location.pathname); } catch (e) {}
     const { data: { session } } = await CLOUD.sb.auth.getSession(); toast('Password saved');
     return session ? cloudAfterSignIn(session) : gateEmail();
-  }
-  if (g === 'other') return gateEmail();
-  if (g === 'verify') {
-    const token = gVal('g-code').replace(/\s/g, ''); if (!/^\d{6,10}$/.test(token)) return gateCode('Enter the code from the email.');
-    gateBusy('Signing you in…'); CLOUD.entering = true;
-    const { data, error } = await CLOUD.sb.auth.verifyOtp({ email: GATE.email, token, type: 'email' });
-    if (error || !data.session) { CLOUD.entering = false; return gateCode('That code didn’t work. It may have expired, so ask for a new one.'); }
-    return cloudAfterSignIn(data.session);
   }
   if (g === 'role') { GATE.name = gVal('g-name'); GATE.role = b.dataset.v; return gateProfile(); }
   if (g === 'start' || g === 'join') {
@@ -2434,12 +2449,12 @@ document.addEventListener('click', async e => {
   }
   if (g === 'signout') return cloudSignOut();
 });
-document.addEventListener('keydown', e => { if (e.key !== 'Enter' || !e.target.closest('#gate')) return; const id = e.target.id; const btn = document.querySelector(id === 'g-email' ? '[data-g=send]' : id === 'g-code' ? '[data-g=verify]' : id === 'g-inv' ? '[data-g=join]' : null); if (btn) btn.click(); });
+document.addEventListener('keydown', e => { if (e.key !== 'Enter' || !e.target.closest('#gate') || e.target.tagName !== 'INPUT') return; const btn = document.querySelector('#gate [data-g=signup], #gate [data-g=signin], #gate [data-g=setpw]') || (e.target.id === 'g-inv' ? document.querySelector('#gate [data-g=join]') : null); if (btn) { e.preventDefault(); btn.click(); } });
 async function cloudSignOut() {
-  if (CLOUD.pending) await cloudPush();
+  if (CLOUD.pending && !CLOUD.offline) await cloudPush();
   if (CLOUD.chan) CLOUD.sb.removeChannel(CLOUD.chan);
-  await CLOUD.sb.auth.signOut(); try { localStorage.removeItem('wd-cloud-wid'); localStorage.removeItem(KEY); } catch (e) {}
-  location.reload();
+  try { await CLOUD.sb.auth.signOut(); } catch (e) {}
+  cloudForget(); location.reload();
 }
 
 /* ---------- Wedding Party, in Settings ---------- */
@@ -2456,11 +2471,11 @@ function partyHTML() {
   <div class="note" style="margin-top:-4px">Signed in as <b style="color:var(--ink)">${esc(CLOUD.me.name)}</b> · ${esc(CLOUD.user.email)}. Everyone below sees the same plan, and changes save for everyone automatically.${owner ? ' Tap a person to change what they can do or remove them.' : ''}</div>
   <div class="kv who">${rows}</div>${pend}
   <div class="sharegrid">${owner ? `<button class="btn plum" data-act="invite">${I.plus} Invite Someone</button>` : ''}<button class="btn alt" data-act="myrole">Change My Role</button></div>
-  <button class="btn alt sm" data-act="signout">Sign Out</button>`;
+  <div class="sharegrid"><button class="btn alt sm" data-act="mypw">Change Password</button><button class="btn alt sm" data-act="signout">Sign Out</button></div>`;
 }
 function inviteSheet(access) {
   UI.invAccess = access || UI.invAccess || 'editor';
-  sheet(`<h4>Invite Someone</h4><div class="lead">They sign in with their email, then enter the code. Each code works once and lasts 14 days.</div>
+  sheet(`<h4>Invite Someone</h4><div class="lead">They create an account, then enter the code. Each code works once and lasts 14 days.</div>
   <div class="opts">${Object.entries(ACCESS).map(([k, [l]]) => `<button class="chip" data-act="invacc" data-v="${k}" aria-pressed="${UI.invAccess === k}">${l}</button>`).join('')}</div>
   <div class="note">${ACCESS[UI.invAccess][1]}</div>
   <button class="btn plum" data-act="invmake">Create Invite Code</button><button class="btn alt" data-close="1">Cancel</button>`);
@@ -2469,7 +2484,7 @@ async function inviteMake() {
   const { data: code, error } = await CLOUD.sb.rpc('wd_make_invite', { p_wedding: CLOUD.wid, p_access: UI.invAccess, p_note: null });
   if (error) return toast(error.message);
   cloudMembers();
-  const msg = `You're invited to help plan ${S.details.couple || 'our wedding'} on The Wedding Desk. Open ${SITE}, sign in with your email, and enter invite code ${code}`;
+  const msg = `You're invited to help plan ${S.details.couple || 'our wedding'} on The Wedding Desk. Open ${SITE}, tap Create Account, and enter invite code ${code}`;
   UI.invMsg = msg;
   sheet(`<h4>Invite Code</h4><div class="lead">${ACCESS[UI.invAccess][0]} · works once · lasts 14 days</div>
   <div class="invcode">${code}</div><div class="note">${esc(msg)}</div>
@@ -2487,7 +2502,19 @@ function myRoleSheet() {
   sheet(`<h4>My Role</h4><div class="lead">Everyone in the wedding sees this.</div>
   <div class="opts">${ROLES.filter(([k]) => own || (k !== 'bride' && k !== 'groom')).map(([k, l]) => `<button class="chip" data-act="setrole" data-v="${k}" aria-pressed="${CLOUD.me.role === k}">${l}</button>`).join('')}</div><button class="btn alt" data-close="1">Done</button>`);
 }
+function myPassSheet(err) {
+  sheet(`<h4>Change Password</h4><div class="lead">Pick a new password for ${esc(CLOUD.user.email)}. You'll use it next time you sign in.</div>
+  <div class="field"><label for="np-1">New password</label><input id="np-1" type="password" autocomplete="new-password" placeholder="At least 8 characters"></div>
+  <div class="field"><label for="np-2">Type it again</label><input id="np-2" type="password" autocomplete="new-password"></div>
+  ${err ? `<div class="note" style="color:var(--alert)">${esc(err)}</div>` : ''}
+  <button class="btn plum" data-act="savepw">Save Password</button><button class="btn alt" data-close="1">Cancel</button>`);
+}
 async function cloudAct(ds) {
+  if (ds.act === 'mypw') return myPassSheet();
+  if (ds.act === 'savepw') { const a = document.getElementById('np-1').value, b = document.getElementById('np-2').value;
+    if (a.length < 8) return myPassSheet('Use at least 8 characters.'); if (a !== b) return myPassSheet('Those two don’t match. Try again.');
+    const { error } = await CLOUD.sb.auth.updateUser({ password: a }); if (error) return myPassSheet(/fetch|network/i.test(error.message) ? 'You’re offline. Try again when you’re connected.' : error.message);
+    closeSheet(); return toast('Password changed'); }
   if (ds.act === 'invite') return inviteSheet();
   if (ds.act === 'invacc') return inviteSheet(ds.v);
   if (ds.act === 'invmake') return inviteMake();
@@ -2498,11 +2525,11 @@ async function cloudAct(ds) {
   if (ds.act === 'invdel') return confirmBox('Cancel This Invite?', 'The code will stop working. You can make a new one any time.', 'Cancel Invite', async () => { const { error } = await CLOUD.sb.from('invites').delete().eq('code', ds.c); if (error) return toast(error.message); await cloudMembers(); toast('Invite cancelled'); });
   if (ds.act === 'myrole') return myRoleSheet();
   if (ds.act === 'setrole') { const { error } = await CLOUD.sb.from('members').update({ role: ds.v }).eq('wedding_id', CLOUD.wid).eq('user_id', CLOUD.user.id); if (error) return toast('Couldn’t change your role'); await cloudMembers(); S.role = ds.v; toast(`You’re now ${ROLE(ds.v)}`); return myRoleSheet(); }
-  if (ds.act === 'signout') return confirmBox('Sign Out?', 'Your wedding stays saved. Sign in again any time with your email.', 'Sign Out', cloudSignOut);
+  if (ds.act === 'signout') return confirmBox('Sign Out?', CLOUD.pending ? 'Some changes haven’t synced yet and will be lost if you sign out now. Go online first to keep them.' : 'Your wedding stays saved. Sign in again any time with your email and password.', 'Sign Out', cloudSignOut);
 }
 
 /* let each sheet opener record itself so Back can reopen it */
-for (const n of ["legalSheet", "inviteSheet", "memberSheet", "myRoleSheet", "rowForm", "tableSheet", "searchSheet", "callSheet", "dndSheet", "reachSheet", "contactSheet", "mapSheet", "composeSheet", "repliesSheet", "guestSheet", "guestForm", "vendorSheet", "vendorForm", "taskForm", "payForm", "settingsSheet", "helpSheet", "shareSheet", "importSheet"]) { const f = window[n]; if (typeof f !== 'function') continue; window[n] = function (...args) { SH_OPEN = (SH_OPEN && SH_OPEN.back && SH_OPEN.fn === n) ? SH_OPEN : { fn: n, args }; return f.apply(this, args); }; }
+for (const n of ["legalSheet", "inviteSheet", "memberSheet", "myRoleSheet", "myPassSheet", "rowForm", "tableSheet", "searchSheet", "callSheet", "dndSheet", "reachSheet", "contactSheet", "mapSheet", "composeSheet", "repliesSheet", "guestSheet", "guestForm", "vendorSheet", "vendorForm", "taskForm", "payForm", "settingsSheet", "helpSheet", "shareSheet", "importSheet"]) { const f = window[n]; if (typeof f !== 'function') continue; window[n] = function (...args) { SH_OPEN = (SH_OPEN && SH_OPEN.back && SH_OPEN.fn === n) ? SH_OPEN : { fn: n, args }; return f.apply(this, args); }; }
 cloudInit();
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
