@@ -639,6 +639,53 @@ body:has(#layer .scrim) { overflow: hidden; }
 .two > * { min-width: 0; }
 .two input, .two select { min-width: 0; width: 100%; }
 @media (max-width: 360px) { .legend { grid-template-columns: repeat(2, auto) !important; row-gap: 6px; } .sh .note { white-space: nowrap; } .sh { flex-wrap: wrap; row-gap: 2px; } }
+
+/* ---------- desktop: sidebar, wider page, two-column cards, centered dialogs ---------- */
+.sbrand, .sfoot { display: none; }
+@media (min-width: 1024px) {
+  body { padding: 0 !important; margin: 0; background: var(--petal); }
+  .app { max-width: none; margin: 0 0 0 248px; border-radius: 0 !important; box-shadow: none; min-height: 100vh !important; background: var(--petal); overflow: visible !important; }
+  .app > main { max-width: 1080px; margin-inline: auto; }
+  .app > .top { max-width: 1024px; margin-inline: max(28px, calc((100% - 1024px) / 2)); }
+  .top { padding-inline: 28px; border-radius: 0 0 26px 26px; }
+  .top.home { margin-top: 24px; border-radius: 26px; padding: 26px 30px 22px; }
+  .top.home .act { display: none; }
+  .top h1 { font-size: 34px; }
+  main { padding: 6px 28px 64px !important; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; align-items: start; }
+  main > * { grid-column: 1 / -1; }
+  main > .card:not(.flush):not(.card:not(.flush) + .card:not(.flush)):has(+ .card:not(.flush)),
+  main > .card:not(.flush) + .card:not(.flush) { grid-column: auto; }
+  main[data-tab="home"] > .card { grid-column: auto; }
+  main[data-tab="home"] > .card.focus, main[data-tab="home"] > .card:last-child:nth-child(odd of .card) { grid-column: 1 / -1; }
+  .glance { gap: 14px; } .glance button { padding: 16px 18px 14px; } .glance .v { font-size: 28px; }
+  .seg { margin: 0; padding-inline: 0; }
+  .table-card { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .tabs { left: 0; top: 0; bottom: 0; transform: none; width: 248px; max-width: none; border-radius: 0 !important; border: 0 !important; border-right: 1px solid var(--line) !important; box-shadow: none !important;
+    background: var(--surface); backdrop-filter: none; display: flex; flex-direction: column; gap: 4px; padding: 24px 14px 20px; }
+  .tab { display: flex; align-items: center; justify-content: flex-start; gap: 12px; padding: 11px 14px; font: 600 14.5px var(--body); color: var(--muted); border-radius: 12px; cursor: pointer; width: 100%; text-align: left; }
+  .tab:hover { background: var(--petal); color: var(--deep); }
+  .tab:active { transform: none; }
+  .tab svg { width: 20px; height: 20px; flex: none; }
+  .tab .dot { display: none; }
+  .tab[aria-current="page"] { background: #F6E3E1; color: var(--deep); }
+  .sbrand { display: flex; align-items: center; gap: 12px; padding: 0 6px 22px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .sbrand b { display: block; font: 600 19px/1.15 var(--display); color: var(--deep); }
+  .sbrand span { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+  .smark { width: 42px; height: 42px; flex: none; border-radius: 12px; background: #F3EBE2; color: #74283A; display: grid; place-items: center; font: 600 20px var(--display); letter-spacing: -.02em; }
+  .sfoot { display: flex; flex-direction: column; gap: 2px; margin-top: auto; padding-top: 14px; border-top: 1px solid var(--line); }
+  .sfoot .tab { font-weight: 500; font-size: 14px; padding: 9px 14px; }
+  .scrim { align-items: center; padding: 32px; }
+  .sheet { max-width: 600px; max-height: calc(100vh - 64px); border-radius: 24px; padding: 10px 26px 26px; box-shadow: 0 40px 80px -30px rgba(63,42,41,.5); animation-name: dpop; }
+  @keyframes dpop { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+  .sheet .grab, .sheet .handle { display: none; }
+  .fab { right: 40px; bottom: 32px; }
+  .selbar { left: calc(50% + 124px); bottom: 28px; max-width: 560px; }
+  .toast { left: calc(50% + 124px); bottom: 32px; }
+  .filtersel { max-width: 260px; }
+  #gate .gwrap { padding-top: 6vh; }
+  #gate .gtop { border-radius: 26px 26px 0 0; }
+}
+@media (min-width: 1024px) and (hover: hover) { .card .row:hover, button.row:hover { background: rgba(246,227,225,.45); } }
 </style>
 
 <div class="app" id="app">
@@ -852,13 +899,16 @@ function confirmBox(title, msg, ok, fn) {
   document.body.appendChild(el); el.querySelector('[data-cfm="1"]').focus();
 }
 function render() {
-  document.getElementById('tabs').innerHTML = TABS.map(([k, l]) => `<button class="tab" data-go="${k}" ${UI.tab === k ? 'aria-current="page"' : ''}>${I[k]}<span>${l}</span><i class="dot"></i></button>`).join('');
+  const cpl = (S.details && S.details.couple) || '';
+  document.getElementById('tabs').innerHTML = `<div class="sbrand"><div class="smark">WD</div><div><b>The Wedding Desk</b>${cpl ? `<span>${esc(cpl)}</span>` : ''}</div></div>`
+    + TABS.map(([k, l]) => `<button class="tab" data-go="${k}" ${UI.tab === k ? 'aria-current="page"' : ''}>${I[k]}<span>${l}</span><i class="dot"></i></button>`).join('')
+    + `<div class="sfoot"><button class="tab" data-act="search">${I.search}<span>Search</span></button><button class="tab" data-act="help">${I.help}<span>Info Center</span></button><button class="tab" data-act="settings">${I.gear}<span>Settings</span></button></div>`;
   const r = { home: renderHome, plan: renderPlan, guests: renderGuests, money: renderMoney, vendors: renderVendors }[UI.tab]();
   const top = document.getElementById('top'); top.className = 'top' + (UI.tab === 'home' ? ' home' : '');
   const pill = r.fab && ADD_STYLE === 'pill' && !UI.selecting ? `<button class="addpill" data-act="${r.fab[0]}" ${r.fab[2] ? `data-k="${r.fab[2]}"` : ''} aria-label="Add ${r.fab[1]}">${I.plus}Add</button>` : '';
   const act = UI.tab === 'home' ? hdrBtn('search', I.search, 'Search Everything') + hdrBtn('help', I.help, 'Info Center') + hdrBtn('settings', I.gear, 'Settings') : (r.act || '') + pill;
   top.innerHTML = `<div class="hrow"><div class="htxt"><div class="eyebrow">${esc(r.eyebrow)}</div><h1>${esc(r.title)}</h1>${r.sub ? `<div class="hsub">${r.sub}</div>` : ''}</div><div class="act">${act}</div></div>${r.head || ''}${r.tabs || ''}${r.tools || ''}`;
-  view.innerHTML = r.html;
+  view.innerHTML = r.html; view.dataset.tab = UI.tab;
   let fab = document.getElementById('fab'); if (!fab) { fab = document.createElement('button'); fab.id = 'fab'; fab.className = 'fab'; document.body.appendChild(fab); }
   if (r.fab && ADD_STYLE === 'fab' && !UI.selecting) { fab.hidden = false; fab.dataset.act = r.fab[0]; fab.setAttribute('aria-label', r.fab[1]); fab.innerHTML = `${I.plus}<span>${r.fab[1]}</span>`; } else fab.hidden = true;
   renderSelbar();
